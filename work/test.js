@@ -15,8 +15,8 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // camera
     camera = new BABYLON.ArcRotateCamera('cam', 
-            0.69,0.88,
-            8.5, 
+            0.96,1.41,
+            3, 
             new BABYLON.Vector3(0,0,0), 
             scene);
     camera.attachControl(canvas,true);
@@ -46,8 +46,10 @@ class BendingHexagon {
         this.vertices = [];
         let n = this.n = 10;
         let sides = this.sides = [];
+        this.uvs = [];
         let center = {side:null, r:0,j:0, links : [], p : V3(0,0,0)};
         this.vertices.push(center);
+        this.uvs.push(0.5,0.5);
         for(let side=0;side<6; side++) {
             let rows = [];
             for(let r=1; r<n; r++) {
@@ -98,20 +100,40 @@ class BendingHexagon {
             { c: V3( 1,-1,-1),  a: V3( 0, 0, 1), b: V3( 0, 1, 0), up: V3( 1, 0, 0) },
             { c: V3( 1, 1,-1),  a: V3( 0,-1, 0), b: V3(-1, 0, 0), up: V3( 0, 0,-1) },
         ];
+        let qs = [];
+        for(let sideIndex = 0; sideIndex<6; sideIndex++) {
+            let phi = Math.PI*2*sideIndex/6;
+            let qr = 0.297;
+            qs.push(new BABYLON.Vector2(
+                Math.cos(phi)*qr, 
+                Math.sin(phi)*qr));
+        }
         sides.forEach((side, sideIndex) => {
             let dt = dts[sideIndex];
             let p0 = dt.c.add(dt.a);
             let p1 = dt.c.add(dt.b);
-            let u = p1.subtract(p0).scale(1.0/(n-1));
-            let v = p0.scale(1.0/(n-1));
+            let e0 = p1.subtract(p0).scale(1.0/(n-1));
+            let e1 = p0.scale(1.0/(n-1));
+            let q0 = qs[sideIndex];
+            let q1 = qs[(sideIndex+1)%6];
+            
+            let g0 = q1.subtract(q0).scale(1.0/(n-1));
+            let g1 = q0.scale(1.0/(n-1));
             
             for(let r=1; r<n; r++) {
                 for(let j=0; j<r; j++) {
                     let vertex = side[r-1][j];
-                    vertex.p = v.scale(r).add(u.scale(j));
+                    vertex.p = e1.scale(r).add(e0.scale(j));
+                    let q = g1.scale(r).add(g0.scale(j));
+                    let psi = Math.atan2(q.y,q.x);
+                    let factor = Math.abs(Math.sin(psi*3));
+                    q = q.scale(1-factor*0.08);
+                    this.uvs.push(0.5+q.x,0.5+q.y);
                 }
             }
         });
+
+        
 
         this.computePoints();
 
@@ -199,6 +221,7 @@ class BendingHexagon {
         vd.positions = positions;
         vd.indices = indices;
         vd.normals = normals;
+        vd.uvs = this.uvs;
         BABYLON.VertexData.ComputeNormals(positions, indices, normals);
         vd.applyToMesh(mesh, true);
         this.mesh = mesh;
@@ -218,7 +241,7 @@ class BendingHexagon {
 }
 
 let hex;
-
+let meshes = [];
 function populateScene() {
     createGrid(scene);
     const V3 = (x,y,z) => new BABYLON.Vector3(x,y,z);
@@ -253,17 +276,39 @@ function populateScene() {
     hex.mesh.material = new BABYLON.StandardMaterial('mat', scene);
     hex.mesh.material.backFaceCulling = false;
     hex.mesh.material.twoSidedLighting = true;
-    
+    hex.mesh.material.diffuseColor.set(1,1,1);
+    hex.mesh.material.specularColor.set(0.01,0.01,0.01);
+    hex.mesh.material.diffuseTexture = new BABYLON.Texture("heaven-and-hell.png",scene);
+    meshes.push(hex.mesh);
 
     let b = hex.mesh.createInstance('a');
     b.position.set(0,0,-2);
     b.rotation.y = Math.PI/2;
+    meshes.push(b);
     b = hex.mesh.createInstance('a');
     b.position.set(-2,0,-2);
     b.rotation.y = Math.PI;
+    meshes.push(b);
     b = hex.mesh.createInstance('a');
     b.position.set(-2,0,0);
     b.rotation.y = -Math.PI/2;
+    meshes.push(b);
+
+    b = hex.mesh.createInstance('a');
+    b.position.set(0,2,0);
+    b.rotation.x = Math.PI;
+    b.rotation.y = -Math.PI/2;
+    meshes.push(b);
+
+    b = hex.mesh.createInstance('a');
+    b.position.set(-2,2,0);
+    // b.rotation.x = Math.PI;
+    b.rotation.y = Math.PI/2;
+    meshes.push(b);
+
+    meshes[0].rotation.x=Math.PI;
+    meshes[0].rotation.y=Math.PI/2;
+    
     /*
 
     let lines =[];
@@ -316,8 +361,8 @@ function populateScene() {
     */
     scene.registerBeforeRender(() => {
         let t = performance.now() * 0.001 * 3;
-        hex.parameter = 0.5 + 0.5 * Math.sin(t);
-        hex.computePoints();
-        hex.updateMesh();
+        //hex.parameter = 0.5 + 0.5 * Math.sin(t);
+        //hex.computePoints();
+        //hex.updateMesh();
     });
 }
