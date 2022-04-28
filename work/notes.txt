@@ -1,0 +1,18 @@
+sequenza immagini
+copertina
+
+1. sfera rotolante
+2. poincare. punti e rette. 
+   disegno
+   ottagono
+   ottagono con tassellazione
+   tassellazione completa con ottagoni
+   altre tess
+   variazioni sul tema (spirali, anelli)
+   la tassellazione di coexeter
+   parte coperta dalla pseudo-sfera
+3. limite del cerchio 3
+4. pseudosfera
+5. simulazione 
+6. angeli e diavoli sulla sfera
+7. sodalite
