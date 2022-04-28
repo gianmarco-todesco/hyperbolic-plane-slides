@@ -42,10 +42,10 @@ window.addEventListener('DOMContentLoaded', () => {
 class BendingHexagon {
     constructor() {
         const V3 = (x,y,z) => new BABYLON.Vector3(x,y,z);
-        
+        this.parameter = 0;
         this.vertices = [];
         let n = this.n = 10;
-        let sides = [];
+        let sides = this.sides = [];
         let center = {side:null, r:0,j:0, links : [], p : V3(0,0,0)};
         this.vertices.push(center);
         for(let side=0;side<6; side++) {
@@ -90,7 +90,7 @@ class BendingHexagon {
             }
         });
 
-        let dts = [
+        let dts = this.dts = [
             { c: V3(-1, 1,-1),  a: V3( 1, 0, 0), b: V3( 0, 0, 1), up: V3( 0, 1, 0) },
             { c: V3(-1, 1, 1),  a: V3( 0, 0,-1), b: V3( 0,-1, 0), up: V3(-1, 0, 0) },
             { c: V3(-1,-1, 1),  a: V3( 0, 1, 0), b: V3( 1, 0, 0), up: V3( 0, 0, 1) },
@@ -113,32 +113,31 @@ class BendingHexagon {
             }
         });
 
-        sides.forEach((side, sideIndex) => {
-            let dt = dts[sideIndex];
+        this.computePoints();
+
+        
+    } 
+
+    computePoints() {
+        const n = this.n;
+        this.sides.forEach((side, sideIndex) => {
+            let dt = this.dts[sideIndex];
             for(let i=0; i<n-1; i++) {
-                let phi = i*Math.PI/(2*(n-1));
-                let p = dt.c.add(dt.a.scale(Math.cos(phi))).add(dt.b.scale(Math.sin(phi)));
+                let t = i/(n-1); 
+                let phi = t*Math.PI/2;
+                let pa = dt.c.add(dt.a.scale(Math.cos(phi))).add(dt.b.scale(Math.sin(phi)));
+                let pb = BABYLON.Vector3.Lerp(dt.c.add(dt.a),dt.c.add(dt.b),t);
                 let vertex = side[n-2][i];
-                vertex.p.copyFrom(p);
+                BABYLON.Vector3.LerpToRef(pa,pb,this.parameter,vertex.p);
             }
         });
 
         let startTime = performance.now();
         for(let i=0; i<50; i++)
             this.relax();
-        console.log("t=", performance.now() - startTime)
+        // console.log("t=", performance.now() - startTime)
 
-        let lines = [];
-        this.links.forEach(([va,vb]) => {
-            lines.push([va.p,vb.p]);
-        })
-        let lines3 = BABYLON.MeshBuilder.CreateLineSystem(
-            "lines", { lines },
-            scene);
-        lines3.color.set(0.4,0.4,1)
-
-    } 
-
+    }
 
     relax() {
         let vertices = this.vertices;
@@ -150,12 +149,24 @@ class BendingHexagon {
         });
     }
     
+    createLines() {
+        let lines = [];
+        this.links.forEach(([va,vb]) => {
+            lines.push([va.p,vb.p]);
+        })
+        let lines3 = BABYLON.MeshBuilder.CreateLineSystem(
+            "lines", { lines },
+            scene);
+        lines3.color.set(0.4,0.4,1);
+        return lines3;
+    }
+
     createMesh() {
         let mesh = new BABYLON.Mesh('a',scene);
         let positions = this.vertices.flatMap(v=>[v.p.x,v.p.y,v.p.z]);
         let nrm = (new BABYLON.Vector3(1,1,1)).normalize();
-        let normals = this.vertices.flatMap(v => [nrm.x,nrm.y,nrm.z]);
-        let indices = [];
+        let normals = this.normals = this.vertices.flatMap(v => [nrm.x,nrm.y,nrm.z]);
+        let indices = this.indices = [];
         let n = this.n;
         let q = n*(n-1)/2;
         for(let i=0; i<6;i++) {
@@ -189,9 +200,20 @@ class BendingHexagon {
         vd.indices = indices;
         vd.normals = normals;
         BABYLON.VertexData.ComputeNormals(positions, indices, normals);
-        vd.applyToMesh(mesh);
+        vd.applyToMesh(mesh, true);
+        this.mesh = mesh;
         return mesh;
     }
+
+    updateMesh() {        
+        let positions = this.vertices.flatMap(v=>[v.p.x,v.p.y,v.p.z]);
+        BABYLON.VertexData.ComputeNormals(positions, this.indices, this.normals);
+                
+        this.mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
+        this.mesh.updateVerticesData(BABYLON.VertexBuffer.NormalKind, this.normals);
+
+    }
+
 
 }
 
@@ -228,7 +250,20 @@ function populateScene() {
 
     hex = new BendingHexagon();
     hex.createMesh();
+    hex.mesh.material = new BABYLON.StandardMaterial('mat', scene);
+    hex.mesh.material.backFaceCulling = false;
+    hex.mesh.material.twoSidedLighting = true;
+    
 
+    let b = hex.mesh.createInstance('a');
+    b.position.set(0,0,-2);
+    b.rotation.y = Math.PI/2;
+    b = hex.mesh.createInstance('a');
+    b.position.set(-2,0,-2);
+    b.rotation.y = Math.PI;
+    b = hex.mesh.createInstance('a');
+    b.position.set(-2,0,0);
+    b.rotation.y = -Math.PI/2;
     /*
 
     let lines =[];
@@ -278,14 +313,11 @@ function populateScene() {
     sphere.material = new BABYLON.StandardMaterial('mat',scene);
     sphere.material.diffuseColor.set(0.2,0.5,0.7);
 
-    scene.registerBeforeRender(() => {
-        let t = performance.now() * 0.001;
-        let sgn = (Math.floor(t)%2)*2-1;
-        sphere.position.set(
-            3*sgn*(1 - Math.cos(Math.PI*2*t)),
-            3*Math.sin(Math.PI*2*t),
-            0
-        );
-    });
     */
+    scene.registerBeforeRender(() => {
+        let t = performance.now() * 0.001 * 3;
+        hex.parameter = 0.5 + 0.5 * Math.sin(t);
+        hex.computePoints();
+        hex.updateMesh();
+    });
 }
