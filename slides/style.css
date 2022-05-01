@@ -1,0 +1,90 @@
+.reveal .quote {
+    text-align: justify;
+    padding:20px;
+}
+
+.reveal .reference {
+    text-align: center;
+    font-size:smaller;
+    font-style: italic;
+}
+
+.reveal .slides > section,
+.reveal .slides > section > section {
+    padding:0 0 20px 0;
+
+}
+
+.reveal .small {
+    font-size:smaller;
+}
+
+.reveal .photos img {
+    border:none;
+    position:absolute;
+}
+
+.reveal .no-mouse {
+    pointer-events: none;
+    z-index: -1;
+}
+
+.reveal iframe {
+    border:0;
+}
+    /*
+.reveal iframe {
+    margin:5px;
+    border:solid 8px orange;  
+}
+*/
+
+.reveal section img {
+    border:none;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.reveal .small {
+    margin-top:0;
+    font-size:20px;
+}
+/* 
+    
+.reveal iframe.inside {
+    width:600px;
+    height:400px; 
+    
+    border:solid 1px orange;
+}
+    */
+.whitebg {
+    background-color: white;
+}
+.reveal .url {
+    font-size:40px;
+}
+.reveal .ref {
+    font-size:40px;
+}
+.reveal li { margin-top:1em;}
+.reveal section .foo img { 
+   background-color: white; 
+   box-shadow:3px 3px 10px black; 
+   border:none; 
+   height:210px; 
+   margin: 10px;
+} 
+.reveal h1 { font-size: 50px; }
+.reveal h2 { font-size: 30px; }
+
+.whitebg {
+    background-color: white;
+}
+.reveal iframe.inside {
+    width:600px;
+    height:400px; 
+    border:solid 1px orange;
+}

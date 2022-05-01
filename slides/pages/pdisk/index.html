@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>Poincaré disk</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <script src="twgl-full.min.js"></script>
+    <script src="../common.js"></script>
+    <script src="common.js"></script>
+    <script src="meshes.js"></script>
+    <script src="materials.js"></script>
+    <script src="gr.js"></script>
+    <script src="hp.js"></script>
+    <script src="tess.js"></script>
+    <script src="scenes.js"></script>
+    <script src="diskviewer.js"></script>
+    <script src="main.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: monospace;
+        }
+        canvas {
+            display: block;
+            margin:30px;
+            width:  100vw;/*  800px;*/
+            height:  100vh; /* 600px;*/
+        }
+        #b {
+          position: absolute;
+          top: 10px;
+          width: 100%;
+          text-align: center;
+          z-index: 2;
+        }
+      </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <!--canvas width="1024" height="1024" id="tx"></canvas -->
+</body>
+</html>
