@@ -18,7 +18,7 @@ function setup() {
     
     // camera
     camera = new BABYLON.ArcRotateCamera('cam', 
-            -Math.PI/2,0.7,
+            -Math.PI/2,0.0,
             15, 
             new BABYLON.Vector3(0,0,0), 
             scene);
@@ -101,17 +101,30 @@ function createPlaneTexture() {
 
 let ground;
 let texture;
+let sphereRadius = 7;
+let ball;
 
 function populateScene() {
-    let sphere = BABYLON.MeshBuilder.CreateSphere('sphere',{
-        diameter:6
+
+    let skySphere = BABYLON.MeshBuilder.CreateSphere('skysphere',{
+        diameter: 1000
+    }, scene);
+    skySphere.material = new BABYLON.StandardMaterial('skysphereMat', scene);
+    skySphere.material.diffuseTexture = new BABYLON.Texture('./sunset.png', scene);
+    skySphere.material.backFaceCulling = false;
+    skySphere.material.specularColor.set(0,0,0);
+    skySphere.material.twoSidedLighting = true;
+
+
+    let sphere = ball = BABYLON.MeshBuilder.CreateSphere('sphere',{
+        diameter:sphereRadius*2
     },scene);
-    sphere.position.set(0,0,0)
+    sphere.position.set(50,0,0)
 
 
     sphere.material = new BABYLON.ShaderMaterial("mat", scene, {
-        vertex: "prova",
-        fragment: "prova",
+        vertex: "MirrorBall",
+        fragment: "MirrorBall",
     },
     {
         attributes: ["position", "normal"],
@@ -119,19 +132,22 @@ function populateScene() {
             "world", "worldView", 
             "worldViewProjection", 
             "view", "projection", 
-            "time"],
+            "time", 
+            "floorPosition",
+            "textureScale"
+        ],
         samplers: ["myTexture"]
     });
    // material.backFaceCulling = false;
 
 
     ground = BABYLON.MeshBuilder.CreateGround('plane', {
-        width:50,
-        height:50
+        width:500,
+        height:500
     }, scene)
-    let qx = 20, qy = qx*Math.sqrt(3);
-    ground.setVerticesData(BABYLON.VertexBuffer.UVKind, [0,0,qx,0,0,qy,qx,qy])
-    ground.position.y = -3
+    let qx = 40, qy = qx*Math.sqrt(3);
+    ground.setVerticesData(BABYLON.VertexBuffer.UVKind, [-qx,-qy,qx,-qy,-qx,qy,qx,qy])
+    ground.position.y = -sphereRadius
     ground.material = new BABYLON.StandardMaterial('a', scene);
     ground.material.specularColor.set(0,0,0);
 
@@ -139,18 +155,53 @@ function populateScene() {
 
 
     sphere.material.setTexture("myTexture", texture);
+    sphere.material.setFloat("floorPosition", -sphereRadius);
+    sphere.material.setFloat("textureScale", 0.2)
 
     scene.registerBeforeRender(() => {
         let t = performance.now() * 0.001;
-        // torus.rotation.x = t;
-        sphere.position.x = Math.sin(t);
+        // sphere.position.x = Math.sin(t);
     });
+
+
+    scene.onKeyboardObservable.add((kbInfo) => {
+        switch (kbInfo.type) {
+          case BABYLON.KeyboardEventTypes.KEYDOWN:
+            onKeyDown(kbInfo.event);
+            break;
+          case BABYLON.KeyboardEventTypes.KEYUP:
+            break;
+        }
+    });
+      
+
 }
 
 
+function onKeyDown(e) {
+    console.log(e);
+    var animation = new BABYLON.Animation(
+        "myAnimation", 
+        "position.x", 
+        30, 
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT, 
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    var keys = [{frame:0, value:30}, {frame:20, value:0}];
+    animation.setKeys(keys);
+
+    var easingFunction = new BABYLON.QuarticEase();
+    easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+
+    animation.setEasingFunction(easingFunction);
+
+    ball.animations = [animation];
+
+    scene.beginAnimation(ball, 0,100, true);
+}
 
 
-BABYLON.Effect.ShadersStore["provaVertexShader"]= `
+BABYLON.Effect.ShadersStore["MirrorBallVertexShader"]= `
 
 precision highp float;
 
@@ -178,7 +229,7 @@ void main() {
 }
 `;
 
-BABYLON.Effect.ShadersStore["provaFragmentShader"]= `
+BABYLON.Effect.ShadersStore["MirrorBallFragmentShader"]= `
 precision highp float;
 
 uniform mat4 worldView, world, view;
@@ -187,6 +238,7 @@ varying vec4 vPosition;
 varying vec3 vNormal;
 
 uniform sampler2D myTexture;
+uniform float floorPosition, textureScale;
 
 void main(void) {
 
@@ -201,97 +253,42 @@ void main(void) {
 
     vec3 r = normalize(reflect(-cameraDir, norm));
 
-    if(r.y>0.0)
-        gl_FragColor = vec4(0.0,1.0,1.0,1.0);
+    vec4 color;
+
+    if(r.y>0.0) {
+        vec4 color1 = vec4(0.02,0.4,0.8,1.0);
+        vec4 color2 = vec4(0.7,0.3,0.01,1.0);
+        
+        color = (1.0-r.y)*color2 + r.y*color1;
+
+    }
     else
     {
-        float h = -3.0;
 
+
+        float h = floorPosition;
         float s = -(pos.y-h)/r.y;
         if(s>=0.0) {
             vec3 p = vec3(pos.x + r.x*s, -1.0, pos.z + r.z*s);
 
-            vec4 color = texture2D(myTexture, 0.3*vec2(p.x,p.z*sqrt(3.0)));
-            gl_FragColor = color;
+            color = texture2D(myTexture, -textureScale*vec2(p.x,p.z*sqrt(3.0)));
     
         } else {
-            gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+            color = vec4(0.0,0.0,0.0,1.0);
 
         }
-
+        if(r.y>-0.1) {
+            float t = (r.y+0.1)/0.1;
+            color = vec4(0.4,0.4,0.4,1.0) * t + color * (1.0-t);
+        }
     }
     
-    /*
+    float d = dot(r, normalize(vec3(0.2,1,-0.2)));
+    vec4 specular = vec4(0,0,0,0);
+    if(d>0.0)
+        specular = vec4(0.5,0.5,0.5,1.0) * pow(d,70.0);
+    gl_FragColor = color + specular;
     
-    
-
-    if(r.y>=0.0)
-        gl_FragColor = vec4(0.0,1.0,1.0,1.0);
-    else 
-    {
-        float s = -(pos.y+2.0)/r.y;
-        vec3 p = vec3(pos.x + r.x*s, -1.0, pos.z + r.z*s);
-        float u = p.x - floor(p.x);
-        float v = p.z - floor(p.z);
-        gl_FragColor = vec4(u,v,1.0,1.0);
-        
-    }
-    */
-
-    /*
-    if(r.y>=0.0) gl_FragColor = vec4(1.0,1.0,0.0,1.0);
-    else
-    {
-        float s = vPosition.y/r.y;
-        vec3 p = vec3(vPosition.x + r.x*s, 0.0, vPosition.z + r.z*s);
-        float u = p.x - floor(p.x);
-        float v = p.z - floor(p.z);
-        gl_FragColor = vec4(u,v,0.0,1.0);
-        gl_FragColor = vec4(1.0,0.0,0.0,1.0);
-    }
-    if(r.y>0.0)
-        gl_FragColor = vec4(1.0,0.0,0.0,1.0);
-    else
-        gl_FragColor = vec4(0.0,1.0,0.0,1.0);
-    */
 
 }
 `;
-
-BABYLON.Effect.ShadersStore["MirrorBallFragmentShader"]= `
-precision highp float;
-varying vec2 vUV;
-varying vec3 v_norm;
-varying vec3 v_pos;
-varying float err;
-varying vec3 v_color;
-varying vec3 v_surfaceToLight;
-varying vec3 v_surfaceToView;
-
-vec4 lit(float l ,float h, float m) {
-    return vec4(1.0,
-                abs(l),//max(l, 0.0),
-                (l > 0.0) ? pow(max(0.0, h), m) : 0.0,
-                1.0);
-}
-
-
-// uniform sampler2D textureSampler;
-void main(void) {
-    if(err > 0.0 || abs(v_pos.x) > 5.0 || abs(v_pos.y) > 2.0 || abs(v_pos.z) > 2.0) discard;
-    else 
-    {
-        vec3 norm = normalize(v_norm);
-        vec3 surfaceToLight = normalize(v_surfaceToLight);
-        vec3 surfaceToView = normalize(v_surfaceToView);
-        vec3 halfVector = normalize(surfaceToLight + surfaceToView);
-    
-        if(dot(surfaceToView, norm)<0.0) {  norm = -norm; }
-        float cs = dot(norm, surfaceToLight);
-        vec4 litR = lit(cs,dot(norm, halfVector), 120.0);
-
-        vec3 color = v_color * litR.y + vec3(1.0,1.0,1.0) * litR.z;
-        gl_FragColor = vec4(color,1.0); // texture2D(textureSampler, vUV);    
-    }
-}
-`
