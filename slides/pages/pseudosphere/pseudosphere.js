@@ -3,6 +3,7 @@
 let canvas, engine, scene, camera;
 let param1 = 0;
 let param1Speed = 0;
+const deltah = 0.2;
 
 const slide = {
     name: 'Pseudosphere'
@@ -57,10 +58,10 @@ function setup() {
     scene.registerBeforeRender(() => {
         let dt = engine.getDeltaTime()*0.001;
         if(param1Speed>0) {
-            param1 += param1Speed*dt;
+            param1 += param1Speed*dt*5;
             if(param1>1) {param1 = 1; param1Speed=0;}
         } else if(param1Speed<0) {
-            param1 += param1Speed*dt;
+            param1 += param1Speed*dt*5;
             if(param1<0) {param1 = 0; param1Speed=0;}
 
         }
@@ -165,6 +166,77 @@ class Surface {
 }
 
 
+function f1(u,v,t) {
+    
+    let phi = 2 * Math.PI * u, csPhi = Math.cos(phi), snPhi = Math.sin(phi);
+    // v = v * m_maxV * 10;
+    let vv = v * 10;
+    
+    if(vv < 1.0) {
+        let t = 1.0-vv;
+        let r = 1.0 + t;
+        let sech_v = 1/Math.cosh(vv);
+        let x = csPhi*r;
+        let y = snPhi*r ;
+        let z = Math.sin(phi*7) * t * t * 0.5 + Math.sin(phi*21) * Math.pow(Math.max(0.0, t-0.5),2) * 0.7 ;
+        let sc = 3;
+        return new BABYLON.Vector3(x*sc, -z*sc - deltah * param1 * phi, y*sc);
+    
+    } else {
+        vv -= 1.0;
+        let sech_v = 1/Math.cosh(vv);
+        let x = csPhi*sech_v;
+        let y = snPhi*sech_v ;
+        let z = vv - Math.tanh(vv) ;
+        let sc = 3;
+        return new BABYLON.Vector3(x*sc, -z*sc - deltah * param1 * phi ,y*sc,);
+    
+    }
+}
+
+let srf;
+
+function populateScene(scene) {
+
+    createGrid(scene);
+
+    srf = new Surface((u,v)=>f1(u,v,0), 200,140, scene);
+
+    let material = srf.mesh.material = new BABYLON.StandardMaterial('mat', scene);
+    material.twoSidedLighting = true;
+    material.backFaceCulling = false;
+    material.diffuseColor.set(0.9,0.9,0.9);
+    material.specularColor.set(0.3,0.3,0.3);
+
+    material.diffuseTexture = makeCheckboardTexture(scene);
+
+    let c1 = srf.mesh.createInstance('c1');
+    let c2 = srf.mesh.createInstance('c2');
+    
+    
+
+    // animazione
+    scene.registerBeforeRender(() => {
+
+        if(param1 == 0.0) {
+            c1.isVisible = c2.isVisible = false;
+        } else {
+            c1.isVisible = c2.isVisible = true;
+            let dy = deltah * param1 * Math.PI * 2;
+            c1.position.y = dy;
+            c2.position.y = dy * 2;
+
+        }
+        // tempo in secondi dopo l'inizio della visione della pagina
+        let seconds = performance.now() * 0.001;
+
+        srf.update((u,v) => f1(u,v,seconds));
+    
+
+    });
+}
+
+
 function makeCheckboardTexture(scene) {
     const w = 1024, h = 1024;
     let tx = new BABYLON.DynamicTexture('a', { width:w, height:h}, scene);
@@ -190,32 +262,6 @@ function makeCheckboardTexture(scene) {
     return tx;
 }
 
-
-function f1_old(u,v,t) {
-    let phi = Math.PI*1.8*v;
-    let theta = Math.PI*1.8*u;
-    const R0 = 3, R1 = 1;
-    let psi = phi*3 + theta*3 + t*3;
-    let r1 = R1 * (1+ 0.2*Math.sin(psi));
-    let r = R0 + r1*Math.cos(theta);
-    return new BABYLON.Vector3(
-        r*Math.cos(phi), 
-        r1*Math.sin(theta),
-        r*Math.sin(phi));
-}
-
-function f1(u,v,t) {
-    
-    let phi = 2 * Math.PI * u, csPhi = Math.cos(phi), snPhi = Math.sin(phi);
-    // v = v * m_maxV * 10;
-    let vv = v * 10;
-    let sech_v = 1/Math.cosh(vv);
-    let x = csPhi*sech_v;
-    let y = snPhi*sech_v ;
-    let z = vv - Math.tanh(vv) ;
-    let sc = 3;
-    return new BABYLON.Vector3(x*sc,-z*sc+3 - param1 * phi ,y*sc,);
-}
 
 function createGrid(scene) {
     
@@ -279,43 +325,3 @@ function createGrid(scene) {
         scene);
     return lines;    
 };
-
-function populateScene(scene) {
-
-    createGrid(scene);
-
-    let srf = new Surface((u,v)=>f1(u,v,0), 70,70, scene);
-
-    let material = srf.mesh.material = new BABYLON.StandardMaterial('mat', scene);
-    material.twoSidedLighting = true;
-    material.backFaceCulling = false;
-    material.diffuseColor.set(0.9,0.9,0.9);
-    material.specularColor.set(0.3,0.3,0.3);
-
-    material.diffuseTexture = makeCheckboardTexture(scene);
-
-    let c1 = srf.mesh.createInstance('c1');
-    let c2 = srf.mesh.createInstance('c2');
-    
-    
-
-    // animazione
-    scene.registerBeforeRender(() => {
-
-        if(param1 == 0.0) {
-            c1.isVisible = c2.isVisible = false;
-        } else {
-            c1.isVisible = c2.isVisible = true;
-            c1.position.y = param1 * 2 * Math.PI;
-            c2.position.y = param1 * 2 * Math.PI * 2;
-
-        }
-        // tempo in secondi dopo l'inizio della visione della pagina
-        let seconds = performance.now() * 0.001;
-
-        srf.update((u,v) => f1(u,v,seconds));
-    
-
-    });
-}
-
