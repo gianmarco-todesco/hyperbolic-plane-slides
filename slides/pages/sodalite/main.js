@@ -57,6 +57,10 @@ function onResize() {
     engine.resize();
 }
 
+
+function step(t,t0,t1) {
+    return t<t0?0:t>t1?1:(t-t0)/(t1-t0);
+}
 /*
 function populateScene() {
     let torus = BABYLON.MeshBuilder.CreateTorus('torus',{
@@ -140,86 +144,7 @@ function populateScene() {
     }
     console.log("time=", performance.now() - startTime)
 
-    /* questo si
-    let b = hex.mesh.createInstance('a');
-    b.position.set(0,0,-2);
-    b.rotation.y = Math.PI/2;
-    meshes.push(b);
-    b = hex.mesh.createInstance('a');
-    b.position.set(-2,0,-2);
-    b.rotation.y = Math.PI;
-    meshes.push(b);
-    b = hex.mesh.createInstance('a');
-    b.position.set(-2,0,0);
-    b.rotation.y = -Math.PI/2;
-    meshes.push(b);
-
-    b = hex.mesh.createInstance('a');
-    b.position.set(0,2,0);
-    b.rotation.x = Math.PI;
-    b.rotation.y = -Math.PI/2;
-    meshes.push(b);
-
-    b = hex.mesh.createInstance('a');
-    b.position.set(-2,2,0);
-    // b.rotation.x = Math.PI;
-    b.rotation.y = Math.PI/2;
-    meshes.push(b);
-
-    meshes[0].rotation.x=Math.PI;
-    meshes[0].rotation.y=Math.PI/2;
-    */
-
-    /*
-
-    let lines =[];
-    let n = 10, m = 30;
-    for(let i=0; i<n; i++) {
-        let t = i/(n-1);
-        let phi = Math.PI/4*t;
-        let p1 = V3(0,0,0);
-        let p4 = V3(1.0 - Math.sin(phi), 1.0,  1.0 - Math.cos(phi));
-        let v4 = V3(0,-1,0).scale(0.25);
-        let v1 = p4.subtract(p1).normalize().scale(0.25);
-        let p2 = p1.add(v1);
-        let p3 = p4.add(v4);
-
-        let single = [];
-        for(let j=0;j<m;j++) {
-            let s = j/(m-1);
-            let p12 = BABYLON.Vector3.Lerp(p1,p2,s);
-            let p23 = BABYLON.Vector3.Lerp(p2,p3,s);
-            let p34 = BABYLON.Vector3.Lerp(p3,p4,s);
-            let p123 = BABYLON.Vector3.Lerp(p12,p23,s);
-            let p234 = BABYLON.Vector3.Lerp(p23,p34,s);
-            let p = BABYLON.Vector3.Lerp(p123,p234,s);
-            single.push(p);
-        }
-        lines.push(single);
-    }
-    let lines3 = BABYLON.MeshBuilder.CreateLineSystem(
-        "lines", { lines },
-        scene);
-    lines3.color.set(0.4,0.4,1)
-*/
     
-    /*
-    let torus = BABYLON.MeshBuilder.CreateTorus('torus',{
-        diameter:6,
-        thickness:1,
-        tessellation:70
-
-    },scene);
-    torus.material = new BABYLON.StandardMaterial('mat',scene);
-    torus.material.diffuseColor.set(0.8,0.4,0.1);
-
-    let sphere = BABYLON.MeshBuilder.CreateSphere('sphere',{
-        diameter:4
-    },scene);
-    sphere.material = new BABYLON.StandardMaterial('mat',scene);
-    sphere.material.diffuseColor.set(0.2,0.5,0.7);
-
-    */
     let hex2 = hexes[3];
     
 
@@ -228,16 +153,18 @@ function populateScene() {
 
 
     scene.registerBeforeRender(() => {
-        let t = performance.now() * 0.001 * 3;
+        let t = performance.now() * 0.001;
         //hex.parameter = 0.5 + 0.5 * Math.sin(t);
         //hex.computePoints();
         //hex.updateMesh();
 
-        let param = 0.5 + 0.5 * Math.sin(t);
+        let gParam = 0.5 + 0.5 * Math.sin(t*0.1);
 
 
 
         for(let j=0;j<64;j++) {
+
+            let param = step(gParam, j/73, (j+10)/73);
             let q = j>>3;
             let i = j%8;
             let h = hexes[j];
@@ -255,7 +182,7 @@ function populateScene() {
             h.updateMesh();  
             h.mesh.position.set(
                 param*(pp[i][0] - 2 + 4 * (q&1)),
-                param*(8 - 2*(i>>2) - 2 + 4 * ((q>>1)&1)),
+                param*(8 - 2*(i>>2) + 2 - 4 * ((q>>1)&1)),
                 param*(pp[i][1] - 2 + 4 * ((q>>2)&1)));
             h.mesh.rotation.x = -(i%2)*Math.PI * param;
             if(i&2) h.mesh.rotation.y = Math.PI * param;
@@ -342,3 +269,87 @@ function createGrid(scene) {
         scene);
     return lines;    
 };
+
+
+// poi dopo
+
+/* questo si
+    let b = hex.mesh.createInstance('a');
+    b.position.set(0,0,-2);
+    b.rotation.y = Math.PI/2;
+    meshes.push(b);
+    b = hex.mesh.createInstance('a');
+    b.position.set(-2,0,-2);
+    b.rotation.y = Math.PI;
+    meshes.push(b);
+    b = hex.mesh.createInstance('a');
+    b.position.set(-2,0,0);
+    b.rotation.y = -Math.PI/2;
+    meshes.push(b);
+
+    b = hex.mesh.createInstance('a');
+    b.position.set(0,2,0);
+    b.rotation.x = Math.PI;
+    b.rotation.y = -Math.PI/2;
+    meshes.push(b);
+
+    b = hex.mesh.createInstance('a');
+    b.position.set(-2,2,0);
+    // b.rotation.x = Math.PI;
+    b.rotation.y = Math.PI/2;
+    meshes.push(b);
+
+    meshes[0].rotation.x=Math.PI;
+    meshes[0].rotation.y=Math.PI/2;
+    */
+
+    /*
+
+    let lines =[];
+    let n = 10, m = 30;
+    for(let i=0; i<n; i++) {
+        let t = i/(n-1);
+        let phi = Math.PI/4*t;
+        let p1 = V3(0,0,0);
+        let p4 = V3(1.0 - Math.sin(phi), 1.0,  1.0 - Math.cos(phi));
+        let v4 = V3(0,-1,0).scale(0.25);
+        let v1 = p4.subtract(p1).normalize().scale(0.25);
+        let p2 = p1.add(v1);
+        let p3 = p4.add(v4);
+
+        let single = [];
+        for(let j=0;j<m;j++) {
+            let s = j/(m-1);
+            let p12 = BABYLON.Vector3.Lerp(p1,p2,s);
+            let p23 = BABYLON.Vector3.Lerp(p2,p3,s);
+            let p34 = BABYLON.Vector3.Lerp(p3,p4,s);
+            let p123 = BABYLON.Vector3.Lerp(p12,p23,s);
+            let p234 = BABYLON.Vector3.Lerp(p23,p34,s);
+            let p = BABYLON.Vector3.Lerp(p123,p234,s);
+            single.push(p);
+        }
+        lines.push(single);
+    }
+    let lines3 = BABYLON.MeshBuilder.CreateLineSystem(
+        "lines", { lines },
+        scene);
+    lines3.color.set(0.4,0.4,1)
+*/
+    
+    /*
+    let torus = BABYLON.MeshBuilder.CreateTorus('torus',{
+        diameter:6,
+        thickness:1,
+        tessellation:70
+
+    },scene);
+    torus.material = new BABYLON.StandardMaterial('mat',scene);
+    torus.material.diffuseColor.set(0.8,0.4,0.1);
+
+    let sphere = BABYLON.MeshBuilder.CreateSphere('sphere',{
+        diameter:4
+    },scene);
+    sphere.material = new BABYLON.StandardMaterial('mat',scene);
+    sphere.material.diffuseColor.set(0.2,0.5,0.7);
+
+    */
