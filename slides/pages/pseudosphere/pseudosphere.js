@@ -4,6 +4,7 @@ let canvas, engine, scene, camera;
 let param1 = 0;
 let param1Speed = 0;
 const deltah = 0.2;
+const globalScale = 3.0;
 
 const slide = {
     name: 'Pseudosphere'
@@ -94,115 +95,19 @@ function onKeyUp(e) {
 }
 
 
-class Surface {
-    constructor(f, nu, nv, scene) {
-        this.nu = nu;
-        this.nv = nv;
-        let vd = new BABYLON.VertexData();
-        vd.positions = [];
-        vd.normals = [];
-        vd.indices = [];
-        vd.uvs = [];
-        for(let i=0;i<nu;i++) {
-            let u = i/(nu-1);
-            for(let j=0;j<nv;j++) {
-                let v = j/(nv-1);
-                let p = f(u,v);
-                let nrm = this.computeNormal(f,u,v);
-                vd.positions.push(p.x,p.y,p.z);
-                vd.normals.push(nrm.x,nrm.y,nrm.z);
-                vd.uvs.push(u,v);
-            }
-        }
-        for(let i=0;i+1<nu;i++) {
-            for(let j=0;j+1<nv;j++) {
-                let k = i*nv+j;
-                vd.indices.push(k,k+1,k+1+nv, k,k+1+nv,k+nv);
-            }
-        }
-        /*
-            vd.normals = [];
-            BABYLON.VertexData.ComputeNormals(
-                vd.positions, 
-                vd.indices, 
-                vd.normals);
-        */
-        let mesh = this.mesh = new BABYLON.Mesh('surface', scene);
-        vd.applyToMesh(mesh, true);
-    }
+let psHorn;
+let psHornInstances;
 
-    computeNormal(f,u,v) {
-        const h = 0.0001;
-        let dfdu=f(u+h,v).subtract(f(u-h,v));
-        let dfdv=f(u,v+h).subtract(f(u,v-h));
-        return BABYLON.Vector3.Cross(dfdu,dfdv).normalize();
-    }
+let psHem;
 
-    update(f) {
-        let positions = this.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-        let normals = this.mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind);
-        const nu = this.nu;
-        const nv = this.nv;
-        let k = 0;
-        for(let i=0;i<nu;i++) {
-            let u = i/(nu-1);
-            for(let j=0;j<nv;j++) {
-                let v = j/(nv-1);
-                let p = f(u,v);
-                let nrm = this.computeNormal(f,u,v);
-                positions[k]=p.x; 
-                positions[k+1]=p.y; 
-                positions[k+2]=p.z; 
-                normals[k]=nrm.x; 
-                normals[k+1]=nrm.y; 
-                normals[k+2]=nrm.z; 
-                k += 3;
-            }
-        }
-        this.mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
-        this.mesh.updateVerticesData(BABYLON.VertexBuffer.NormalKind, normals);
-        
-    }
-}
-
-
-function f1(u,v,t) {
-    
-    let phi = 2 * Math.PI * u, csPhi = Math.cos(phi), snPhi = Math.sin(phi);
-    // v = v * m_maxV * 10;
-    let vv = v * 10;
-    
-    if(vv < 1.0) {
-        let t = 1.0-vv;
-        let r = 1.0 + t;
-        let sech_v = 1/Math.cosh(vv);
-        let x = csPhi*r;
-        let y = snPhi*r ;
-        let z = Math.sin(phi*7) * t * t * 0.5 + Math.sin(phi*21) * Math.pow(Math.max(0.0, t-0.5),2) * 0.7 ;
-        let sc = 3;
-        return new BABYLON.Vector3(x*sc, -z*sc - deltah * param1 * phi, y*sc);
-    
-    } else {
-        vv -= 1.0;
-        let sech_v = 1/Math.cosh(vv);
-        let x = csPhi*sech_v;
-        let y = snPhi*sech_v ;
-        let z = vv - Math.tanh(vv) ;
-        let sc = 3;
-        return new BABYLON.Vector3(x*sc, -z*sc - deltah * param1 * phi ,y*sc,);
-    
-    }
-}
-
-let srf;
 
 function populateScene(scene) {
 
-    createGrid(scene);
+    // createGrid(scene);
 
-    srf = new Surface((u,v)=>f1(u,v,0), 200,140, scene);
+    psHorn = new PsHorn(scene);
 
-    let material = srf.mesh.material = new BABYLON.StandardMaterial('mat', scene);
+    let material = psHorn.mesh.material = new BABYLON.StandardMaterial('mat', scene);
     material.twoSidedLighting = true;
     material.backFaceCulling = false;
     material.diffuseColor.set(0.9,0.9,0.9);
@@ -210,10 +115,19 @@ function populateScene(scene) {
 
     material.diffuseTexture = makeCheckboardTexture(scene);
 
-    let c1 = srf.mesh.createInstance('c1');
-    let c2 = srf.mesh.createInstance('c2');
-    
-    
+    let c1 = psHorn.mesh.createInstance('c1');
+    let c2 = psHorn.mesh.createInstance('c2');
+    psHornInstances = [c1, c2];
+
+
+    psHem = new PsHem(scene);
+    material = psHem.mesh.material = new BABYLON.StandardMaterial('mat', scene);
+    material.twoSidedLighting = true;
+    material.backFaceCulling = false;
+    material.diffuseColor.set(0.9,0.9,0.9);
+    material.specularColor.set(0.3,0.3,0.3);
+    // material.diffuseTexture = makeCheckboardTexture(scene);
+    material.wireframe = true;
 
     // animazione
     scene.registerBeforeRender(() => {
@@ -225,13 +139,13 @@ function populateScene(scene) {
             let dy = deltah * param1 * Math.PI * 2;
             c1.position.y = dy;
             c2.position.y = dy * 2;
-
         }
         // tempo in secondi dopo l'inizio della visione della pagina
         let seconds = performance.now() * 0.001;
-
-        srf.update((u,v) => f1(u,v,seconds));
-    
+        psHorn.deltah = deltah * param1;
+        psHorn.update();
+        // srf.update((u,v) => f1(u,v,seconds));
+        
 
     });
 }
