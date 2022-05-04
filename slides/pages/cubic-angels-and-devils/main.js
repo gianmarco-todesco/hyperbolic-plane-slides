@@ -91,7 +91,7 @@ function setup() {
                 // console.log(pointerInfo);
             break;
         }
-      });
+    });
 }
 
 function cleanup() {

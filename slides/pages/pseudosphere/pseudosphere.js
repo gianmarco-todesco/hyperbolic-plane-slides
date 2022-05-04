@@ -67,6 +67,38 @@ function setup() {
 
         }
     });
+
+
+    let pointerDown = false;
+    let pointerOldX = 0;
+
+    scene.onPointerObservable.add((pointerInfo) => {
+        switch (pointerInfo.type) {
+            case BABYLON.PointerEventTypes.POINTERDOWN:
+                if(pointerInfo.event.button == 2) {
+                    camera.inputs.attached.pointers.detachControl();
+                    pointerDown = true;
+                    pointerOldX = pointerInfo.event.clientX;
+                }
+            break;
+            case BABYLON.PointerEventTypes.POINTERUP:
+                // console.lo(pointerInfo);
+                if(pointerDown) {
+                    pointerDown = false;
+                    camera.inputs.attached.pointers.attachControl();
+                }
+            break;
+            case BABYLON.PointerEventTypes.POINTERMOVE:
+                if(pointerDown) {
+                    let dx = pointerInfo.event.clientX - pointerOldX;
+                    pointerOldX = pointerInfo.event.clientX;
+                    onDrag(dx);
+
+                }
+                // console.log(pointerInfo);
+            break;
+        }
+    });
 }
 
 function cleanup() {
@@ -80,6 +112,12 @@ function cleanup() {
     }
 }
 
+let blossom = 0.0;
+
+function onDrag(dx) {
+    blossom = Math.max(0.0, Math.min(1.0, (blossom+dx*0.01)));
+    updateTexture(psHem.mesh.material.diffuseTexture, 1-blossom)
+}
 
 function onResize() {
     engine.resize();
@@ -106,7 +144,7 @@ function populateScene(scene) {
     // createGrid(scene);
 
     psHorn = new PsHorn(scene);
-
+    // psHorn.mesh.isVisible = false;
     let material = psHorn.mesh.material = new BABYLON.StandardMaterial('mat', scene);
     material.twoSidedLighting = true;
     material.backFaceCulling = false;
@@ -126,8 +164,9 @@ function populateScene(scene) {
     material.backFaceCulling = false;
     material.diffuseColor.set(0.9,0.9,0.9);
     material.specularColor.set(0.3,0.3,0.3);
-    // material.diffuseTexture = makeCheckboardTexture(scene);
-    material.wireframe = true;
+    material.diffuseTexture = makeCheckboardTexture(scene);
+    material.wireframe = false;
+    updateTexture(psHem.mesh.material.diffuseTexture, 1-blossom);
 
     // animazione
     scene.registerBeforeRender(() => {
@@ -147,6 +186,7 @@ function populateScene(scene) {
         // srf.update((u,v) => f1(u,v,seconds));
         
 
+        //updateTexture(material.diffuseTexture, Math.sin(seconds)*0.5+0.5)
     });
 }
 
@@ -176,6 +216,33 @@ function makeCheckboardTexture(scene) {
     return tx;
 }
 
+function updateTexture(texture, t) {
+    const w = 1024, h = 1024;
+    let ctx = texture.getContext();
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = 'magenta';
+    
+    ctx.fillRect(0,0,w,h);
+    let dx = 128, dy = 128;
+    ctx.fillStyle = 'cyan';
+    for(let i=0; i*dy<h; i++) {
+        for(let j=0;j*dx<w;j++) {
+            if((i+j)&1) {
+                ctx.fillRect(j*dx,i*dy,dx,dy);
+            }
+        }
+    }
+    ctx.fillStyle = 'black';
+    //for(let i=0; i*dy<h; i++) ctx.fillRect(0,i*dy-3,w,7);
+    //for(let j=0; j*dx<w; j++) ctx.fillRect(j*dx-3,0,7,h);
+
+    ctx.clearRect(0,0,w,t*h);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0,t*h,w,25);
+    // ctx.fillRect(0,0,w,t*h);
+
+    texture.update();
+}
 
 function createGrid(scene) {
     
