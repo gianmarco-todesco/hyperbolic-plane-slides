@@ -297,6 +297,10 @@ class Octahedron {
         this.caps = [this.cap.mesh];
         this.capMaterial = this.cap.mesh.material = new BABYLON.StandardMaterial('capmat', scene);
         this.hexMaterial = this.hex.mesh.material = new BABYLON.StandardMaterial('hexmat', scene);
+        this.capMaterial.diffuseColor.set(0.3,0.4,0.7);
+        this.capMaterial.specularColor.set(0.3,0.3,0.3);
+        this.hexMaterial.diffuseColor.set(0.6,0.4,0.7);
+        this.hexMaterial.specularColor.set(0.3,0.3,0.3);
         
         for(let i=1; i<8;i++) this.hexes.push(this.hex.mesh.createInstance('a'+i));
         for(let i=1; i<6;i++) this.caps.push(this.cap.mesh.createInstance('a'+i));
@@ -334,7 +338,26 @@ class Octahedron {
     set parameter(v) {
         this._parameter = v;
         this.hex.parameter = v;
-        this.cap.parameter = v;
-        
+        this.cap.parameter = v;        
+    }
+
+    copy() {
+        let otherNode = new BABYLON.TransformNode('t',scene);
+        let hexes = [];
+        let caps = [];
+        for(let i=0; i<8;i++) hexes.push(this.hex.mesh.createInstance('a'+i));
+        for(let i=0; i<6;i++) caps.push(this.cap.mesh.createInstance('a'+i));
+        hexes.forEach((hex,i) => {
+            hex.parent = otherNode;
+            hex.position.copyFrom(this.hexes[i].position);
+            hex.rotation.copyFrom(this.hexes[i].rotation);            
+        });
+        caps.forEach((cap,i) => {
+            cap.parent = otherNode;
+            cap.position.copyFrom(this.caps[i].position);
+            cap.rotation.copyFrom(this.caps[i].rotation);  
+        });
+        return otherNode;
+
     }
 }

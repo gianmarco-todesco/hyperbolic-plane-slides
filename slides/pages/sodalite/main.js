@@ -66,9 +66,17 @@ function populateScene() {
     scene.registerBeforeRender(() => {
         let t = performance.now() * 0.001;
         let s = 0.5+0.5*Math.sin(t);
-        // oh.parameter = s;
-        //cap.parameter = s;
+        oh.parameter = s;
+        // cap.parameter = s;
     });
 }
 
 
+function stage2() {
+    let ohs = [oh.node];
+    for(let i=1;i<8;i++) ohs.push(oh.copy());
+    ohs.forEach((q,i) => {
+        q.position.set(2*(-1+2*(i&1)), 2*(-1+2*((i>>1)&1)), 2*(-1+2*((i>>2)&1)));
+
+    })
+}
