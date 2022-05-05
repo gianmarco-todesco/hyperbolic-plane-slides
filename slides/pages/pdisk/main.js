@@ -16,33 +16,17 @@ function setup() {
 
 
     let scenes = [
-        new Scene7(),
-        new Scene6(),
-        new Scene3(),
         new Scene1(),
         new Scene2(),
+        new Scene3(),
         new Scene4(),
         new Scene5(),
-        
-        
+        new Scene6(),
+        new Scene7(),
+                
     ];
 
     viewer = new DiskViewer({ scenes } );
-    /*
-    viewer = new DiskViewer({ 
-        onPointerDrag : (e) => {
-            let x = 1024 * (0.5 + e.x * 0.5);
-            let y = 1024 * (0.5 + e.y * 0.5);
-            textureCtx.fillStyle='black';
-            textureCtx.fillRect(x - 5, y - 5, 10, 10);
-            disk.material.updateTexture(disk.material.uniforms.texture, textureCanvas);
-        }
-        
-    });
-    */
-    
-    
-
 }
 
 function cleanup() {

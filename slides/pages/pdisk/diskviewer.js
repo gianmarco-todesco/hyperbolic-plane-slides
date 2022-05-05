@@ -24,7 +24,7 @@ class DiskViewer {
 
         this.createEntities();
         
-        this.draggableDots = [];
+        // this.draggableDots = [];
         this.currentDot = null;
 
         this.currentSceneIndex = null;
@@ -73,18 +73,14 @@ class DiskViewer {
             }
             if(this.currentScene.start) this.currentScene.start();
         }
-    }
-
-    createDraggableDot(x,y) {
-        let dot = new DraggableDot(this, x,y);
-        this.draggableDots.push(dot);
-        return dot;
+        this.currentDot = null;
     }
 
     getDotNearby(p) {
+        if(!this.currentScene || !this.currentScene.draggableDots) return null;
         let found = null;
         let minDist = 0;
-        this.draggableDots.forEach(dot => {
+        this.currentScene.draggableDots.forEach(dot => {
             let dist = getDistance(p, dot.pos);
             if(!found || dist < minDist) {
                 found = dot;
@@ -100,9 +96,9 @@ class DiskViewer {
         let entities = this.entities = {};
         entities.circle = new Circle(gl, 1.02, 0.02, 100);
         entities.disk = new Disk(gl, 1.0, 100);
-        let dotRadius = 0.02;        
+        let dotRadius = 0.01;        
         entities.dot = new Disk(gl, dotRadius, 30);
-        entities.dotBorder = new Circle(gl, dotRadius, 0.005, 30);
+        entities.dotBorder = new Circle(gl, dotRadius, 0.002, 30);
     }
 
     pointerPosToWordPos(e) {
@@ -152,6 +148,8 @@ class DiskViewer {
     
     _onKeyDown(e) {
         console.log(e);
+        e.preventDefault();
+        e.stopPropagation();
         if(e.code == "ArrowLeft") {
             if(this.currentSceneIndex>0) {
                 this.currentSceneIndex--;

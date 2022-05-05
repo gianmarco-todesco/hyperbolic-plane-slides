@@ -92,10 +92,11 @@ class HSegmentMesh extends Mesh {
     }  
 
     _computePts() {
+        const thickness = 0.005;
         const m = this.m;
         const buffer = this.attributes.position.data;
         for(let i=0;i<m;i++) {
-            let w = i==0 || i==m-1 ? 0.0 : (-1 + 2*(i%2))*0.01;
+            let w = i==0 || i==m-1 ? 0.0 : (-1 + 2*(i%2))*thickness;
             let p = this.hSegment.getPoint(i/(m-1),w);
             buffer[i*2] = p[0];
             buffer[i*2+1] = p[1];            
@@ -193,13 +194,28 @@ class HRegularPolygon {
 
     draw() {
         let oldMatrix = this.edge.material.uniforms.hModelMatrix;
-        this.edge.material.setColor([0,1,1,1]);
+        this.edge.material.setColor([0.5,0.3,0.5,1]);
         for(let i=0; i<this.vCount; i++) {
             let phi = Math.PI*2*i/this.vCount;
             this.edge.material.uniforms.hModelMatrix = m4.multiply(this.matrix, m4.rotationZ(phi));
             this.edge.draw();
         }
         this.edge.material.uniforms.hModelMatrix = oldMatrix;
+    }
+
+    drawVertices(dot) {
+        let p0 = this.edge.hSegment.p0;
+        for(let i=0; i<this.vCount; i++) {
+            let phi = Math.PI*2*i/this.vCount;
+            let matrix = m4.multiply(this.matrix, m4.rotationZ(phi));
+            let p = pTransform(matrix, p0);
+
+            let mat = twgl.m4.translation([p[0], p[1],0.0]);
+            let oldMat = dot.material.uniforms.modelMatrix;
+            dot.material.uniforms.modelMatrix = mat;
+            dot.draw();
+            dot.material.uniforms.modelMatrix = oldMat;
+        }
     }
 
     setFirstVertex(p) {
