@@ -339,31 +339,47 @@ class Scene6 {
 class Scene7 {
     init() {
         const {gl, viewer, disk} = this;
-
         let tess = this.tess = new Tessellation();
         tess.addFirstShell();
-        //for(let i=0;i<4;i++) tess.addShell();
+        for(let i=0;i<4;i++) tess.addShell();
 
         // let textureCanvas = this._createTexture();
 
 
-        this.hPolygon = new HRegularPolygonMesh(gl, 8, tess.R * 1.25, 60);
+        this.hPolygon = new HRegularPolygonMesh(gl, 8, tess.R * 1.3, 60);
         this.hPolygon.material = new HyperbolicPalettedTexturedMaterial(gl);
-        this.hPolygon.material.uniforms.texture = twgl.createTexture(gl, {src:'./images/texture2.png', mag: gl.LINEAR, min: gl.LINEAR });
+        this.hPolygon.material.uniforms.texture = twgl.createTexture(gl, {src:'./images/texture4.png', mag: gl.LINEAR, min: gl.LINEAR });
         this.hMatrix = m4.identity();
-
+        this.hPolygon.material.uniforms.textureScale = 0.512;
+        this.hPolygon.material.uniforms.textureOffset = [0.4959727582292849, 0.49816231555051077]
 
         let palette = this.palette = [
             [0.53,0.52,0.28,1],
             [0.73,0.53,0.16,1],
             [0.50,0.21,0.13,1],
             [0.17,0.32,0.35,1]        
-        ]; // .map(v => v.map(x => x*3.0));
+        ].map(v => v.map(x => x*2.0));
     
     }
 
+    onKeyDown(e) {
+        console.log(e);
+        if(e.key == 'a') this.hPolygon.material.uniforms.textureOffset[0] += 0.001;
+        else if(e.key == 'd') this.hPolygon.material.uniforms.textureOffset[0] -= 0.001;
+        else if(e.key == 'w') this.hPolygon.material.uniforms.textureOffset[1] += 0.001;
+        else if(e.key == 's') this.hPolygon.material.uniforms.textureOffset[1] -= 0.001;
+        else if(e.key == 'z') this.hPolygon.material.uniforms.textureScale  += 0.001;
+        else if(e.key == 'x') this.hPolygon.material.uniforms.textureScale  -= 0.001;
+
+        console.log(this.hPolygon.material.uniforms.textureOffset, this.hPolygon.material.uniforms.textureScale)
+        
+    }
     render() {
         const {gl, viewer, disk} = this;
+
+        viewer.entities.disk.material.setColor([0,0,0,1]);
+        viewer.entities.disk.draw();
+
         const uniforms = this.hPolygon.material.uniforms;
         let hViewMatrix = this.hMatrix;
         let scramble = [0,1,2,3];

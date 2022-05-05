@@ -356,6 +356,8 @@ class HyperbolicPalettedTexturedMaterial extends Material {
             uniform mat4 hInvMatrix;
             uniform sampler2D texture;
             uniform float textureScale;
+            uniform vec2 textureOffset;
+            
 
             // poincaré to hyperboloid
             vec4 p2h(vec2 p) { 
@@ -370,8 +372,8 @@ class HyperbolicPalettedTexturedMaterial extends Material {
 
             void main() {
                 vec2 q = h2p(hInvMatrix * p2h(v_pos));
-                vec4 c = texture2D(texture, vec2(0.5, 0.5) + q * textureScale); 
-                float gray = (c.r+c.g+c.b)/3.0;
+                vec4 c = texture2D(texture, textureOffset + q * textureScale ); 
+                float gray = c.b;
                 float alpha = c.a;
                 if(c.r > gray * 1.1) gl_FragColor = vec4(color1.rgb*gray,alpha);
                 else if(c.g > gray * 1.1) gl_FragColor = vec4(color2.rgb*gray,alpha);
@@ -389,7 +391,8 @@ class HyperbolicPalettedTexturedMaterial extends Material {
                 hMatrix: twgl.m4.identity(),
                 hInvMatrix: twgl.m4.identity(),
                 texture: null,
-                textureScale: 0.5
+                textureScale: 0.5,
+                textureOffset:[0.5,0.5]
 
             }
         });

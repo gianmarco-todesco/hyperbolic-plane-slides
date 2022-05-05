@@ -99,6 +99,7 @@ class DiskViewer {
         let gl = this.gl;
         let entities = this.entities = {};
         entities.circle = new Circle(gl, 1.02, 0.02, 100);
+        entities.disk = new Disk(gl, 1.0, 100);
         let dotRadius = 0.02;        
         entities.dot = new Disk(gl, dotRadius, 30);
         entities.dotBorder = new Circle(gl, dotRadius, 0.005, 30);
@@ -163,6 +164,7 @@ class DiskViewer {
             }
 
         }
+        else if(this.currentScene && this.currentScene.onKeyDown) this.currentScene.onKeyDown(e);
     }
 
 
