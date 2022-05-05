@@ -301,7 +301,7 @@ class Octahedron {
         this.capMaterial.specularColor.set(0.3,0.3,0.3);
         this.hexMaterial.diffuseColor.set(0.6,0.4,0.7);
         this.hexMaterial.specularColor.set(0.3,0.3,0.3);
-        
+        this._isVisible = true;
         for(let i=1; i<8;i++) this.hexes.push(this.hex.mesh.createInstance('a'+i));
         for(let i=1; i<6;i++) this.caps.push(this.cap.mesh.createInstance('a'+i));
 
@@ -335,29 +335,80 @@ class Octahedron {
         
     }
 
+    get parameter() { return this._parameter; }
     set parameter(v) {
         this._parameter = v;
         this.hex.parameter = v;
         this.cap.parameter = v;        
     }
 
-    copy() {
-        let otherNode = new BABYLON.TransformNode('t',scene);
-        let hexes = [];
-        let caps = [];
-        for(let i=0; i<8;i++) hexes.push(this.hex.mesh.createInstance('a'+i));
-        for(let i=0; i<6;i++) caps.push(this.cap.mesh.createInstance('a'+i));
+    get isVisible() { return this._isVisible; }
+    set isVisible(visible) {
+        this._isVisible = visible;
+        this.hexes.forEach(hex => hex.isVisible = visible);
+        this.caps.forEach(cap => cap.isVisible = visible);
+    }
+    
+
+    createPyramid() {
+
+        let vd = new BABYLON.VertexData();
+        vd.positions = [];
+        vd.normals = [];
+        vd.indices = [];
+        let k = 0;
+        function addFace(pts) {
+            pts.forEach(([x,y,z])=>vd.positions.push(x,y,z));
+            for(let i=2;i<pts.length;i++) vd.indices.push(k,k+i-1,k+i);
+            k += pts.length;
+        }
+        let base = [[2,1,0],[ 2, 0, 1],[2,-1, 0],[2,0,-1]];
+        addFace(base);
+        for(let i = 0; i<4; i++) addFace([[3,0,0],base[(i+1)%4],base[i]]);
+        BABYLON.VertexData.ComputeNormals(vd.positions, vd.indices, vd.normals);
+        let mesh = new BABYLON.Mesh('pyramid', scene);
+        vd.applyToMesh(mesh);
+        let material = mesh.material = new BABYLON.MultiMaterial("multi", scene);
+        material.subMaterials.push(this.capMaterial);
+        material.subMaterials.push(this.hexMaterial);
+        mesh.subMeshes = [];
+        let verticesCount = k;
+        new BABYLON.SubMesh(0, 0, verticesCount, 0, 3*2, mesh);
+        new BABYLON.SubMesh(1, 0, verticesCount, 6, 3*4, mesh);
+        
+        /*
+        material;
+        
+        new BABYLON.SubMesh(1, 0, verticesCount, 4, verticesCount-4, mesh);
+        */
+        return mesh;
+    }
+}
+
+class OctahedronCopy {
+    constructor(octahedron) {
+        let node = this.node = new BABYLON.TransformNode('t',scene);
+        let hexes = this.hexes = [];
+        let caps =  this.caps = [];
+        for(let i=0; i<8;i++) hexes.push(octahedron.hex.mesh.createInstance('a'+i));
+        for(let i=0; i<6;i++) caps.push(octahedron.cap.mesh.createInstance('a'+i));
         hexes.forEach((hex,i) => {
-            hex.parent = otherNode;
-            hex.position.copyFrom(this.hexes[i].position);
-            hex.rotation.copyFrom(this.hexes[i].rotation);            
+            hex.parent = node;
+            hex.position.copyFrom(octahedron.hexes[i].position);
+            hex.rotation.copyFrom(octahedron.hexes[i].rotation);            
         });
         caps.forEach((cap,i) => {
-            cap.parent = otherNode;
-            cap.position.copyFrom(this.caps[i].position);
-            cap.rotation.copyFrom(this.caps[i].rotation);  
+            cap.parent = node;
+            cap.position.copyFrom(octahedron.caps[i].position);
+            cap.rotation.copyFrom(octahedron.caps[i].rotation);  
         });
-        return otherNode;
+        this._isVisible = true;
+    }
 
+    get isVisible() { return this._isVisible; }
+    set isVisible(visible) {
+        this._isVisible = visible;
+        this.hexes.forEach(hex => hex.isVisible = visible);
+        this.caps.forEach(cap => cap.isVisible = visible);
     }
 }
