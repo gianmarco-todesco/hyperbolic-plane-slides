@@ -182,19 +182,23 @@ class FreeHandDrawingScene {
         if(e.key=="0") {
             this.hlineCount = 0;
             this.draggableDots = [];
-
+            return true;
         } else if(e.key=="1") {
             this.hlineCount = 1;
             this.draggableDots = [this.dot1, this.dot2];
+            return true;
         } else if(e.key=="2") {
             this.hlineCount = 2;
             this.draggableDots = [this.dot1, this.dot2, this.dot3, this.dot4];
+            return true;
         } else if(e.key=='c' || e.key=="Delete") {
             let ctx = this.textureCtx;
             ctx.clearRect(0,0,1024,1024);
             this.disk.material.updateTexture(this.disk.material.uniforms.texture, this.textureCanvas);
+            return true;
         }
-
+        else 
+            return false;
         
     }
 }
@@ -506,7 +510,8 @@ class CircleLimitIIIScene {
         let tess = this.tess = new Tessellation();
         tess.addFirstShell();
         for(let i=0;i<4;i++) tess.addShell();
-
+        this.octagonCount = 0; // tess.cells.length;
+        this.showOctagons = true;
         // let textureCanvas = this._createTexture();
 
 
@@ -517,37 +522,52 @@ class CircleLimitIIIScene {
         this.hPolygon.material.uniforms.textureScale = 0.512;
         this.hPolygon.material.uniforms.textureOffset = [0.4959727582292849, 0.49816231555051077]
 
-        let palette = this.palette = [
+
+        this.hPolygonOutline = new HRegularPolygonThickOutlineMesh(gl, 8, tess.R, 0.015, 10);
+
+        this.palette = [
             [0.53,0.52,0.28,1],
             [0.73,0.53,0.16,1],
             [0.50,0.21,0.13,1],
             [0.17,0.32,0.35,1]        
         ].map(v => v.map(x => x*2.0));
+        this.scramble = [0,1,2,3];
     
     }
 
     onKeyDown(e) {
         console.log(e);
+
+        /*
         if(e.key == 'a') this.hPolygon.material.uniforms.textureOffset[0] += 0.001;
         else if(e.key == 'd') this.hPolygon.material.uniforms.textureOffset[0] -= 0.001;
         else if(e.key == 'w') this.hPolygon.material.uniforms.textureOffset[1] += 0.001;
         else if(e.key == 's') this.hPolygon.material.uniforms.textureOffset[1] -= 0.001;
         else if(e.key == 'z') this.hPolygon.material.uniforms.textureScale  += 0.001;
         else if(e.key == 'x') this.hPolygon.material.uniforms.textureScale  -= 0.001;
-
         console.log(this.hPolygon.material.uniforms.textureOffset, this.hPolygon.material.uniforms.textureScale)
+        */
+        if(e.key == 's') this.octagonCount = Math.min(this.tess.cells.length, this.octagonCount + 1);
+        else if(e.key == 'a') this.octagonCount = Math.max(0, this.octagonCount - 1);
+        else if(e.key == 'd') { this.octagonCount = this.tess.cells.length; this.showOctagons = false; }
+        else if(e.key == 'e') this.showOctagons = !this.showOctagons;
+
+
+        else if(e.key == 'm') {
+        }
         
     }
     render() {
         const {gl, viewer, disk} = this;
 
-        viewer.entities.disk.material.setColor([0,0,0,1]);
+        viewer.entities.disk.material.setColor([0.3,0.3,0.3,1]);
         viewer.entities.disk.draw();
 
         const uniforms = this.hPolygon.material.uniforms;
         let hViewMatrix = this.hMatrix;
-        let scramble = [0,1,2,3];
-        this.tess.cells.forEach(cell => {
+        let scramble = this.scramble; 
+        for(let i=0; i<this.octagonCount; i++) {
+            let cell = this.tess.cells[i];
 
             uniforms.color1 = this.palette[scramble[cell.colors[0]]];
             uniforms.color2 = this.palette[scramble[cell.colors[1]]];
@@ -555,18 +575,32 @@ class CircleLimitIIIScene {
             m4.multiply(hViewMatrix, cell.mat, uniforms.hMatrix);
             m4.inverse(uniforms.hMatrix, uniforms.hInvMatrix);            
             this.hPolygon.draw();
-        })
+        }
         m4.identity(uniforms.hMatrix);
         m4.identity(uniforms.hInvMatrix);
+
+        if(this.showOctagons) {
+            this.hPolygonOutline.material.uniforms.color = [0.2,0.02,0.2,1.0]
+            this.tess.cells.forEach(cell => {
+                m4.multiply(hViewMatrix, cell.mat, this.hPolygonOutline.material.uniforms.hModelMatrix); //  = cell.mat;
+                this.hPolygonOutline.draw();
+            })
+            this.hPolygonOutline.material.uniforms.hModelMatrix = m4.identity();
+    
+        }
     }
 
 
     onPointerDrag(e) {
 
+        this.hMatrix = m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix);
+        this.tess.adjustMatrix2(this.hMatrix, this.scramble);
+        // this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
+
 
         // this.tess.adjustMatrix(
-        this.hMatrix = m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix);
-        this.hMatrix = normalizeHMatrix(this.hMatrix);
+        //this.hMatrix = m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix);
+        //this.hMatrix = normalizeHMatrix(this.hMatrix);
         // this.hMatrix = m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix);
     }
 }

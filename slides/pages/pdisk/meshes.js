@@ -140,6 +140,41 @@ class HRegularPolygonOutlineMesh extends Mesh {
     }
 }
 
+class HRegularPolygonThickOutlineMesh extends Mesh {
+    constructor(gl, vCount, radius, thickness, m) {
+        super(gl, gl.TRIANGLE_STRIP, getSimpleHyperbolicMaterial(gl));
+        this.vCount = vCount;
+        this.radius = radius;
+        this.m = m;
+        this.thickness = thickness;
+        const attributes = this.attributes = { position: { data: new Array(m*4*vCount), numComponents: 2 } };    
+        this._computePts();
+        this.createBufferInfo(attributes);
+    }  
+
+    _computePts() {
+        const m = this.m;
+        const buffer = this.attributes.position.data;
+        let pts = [];
+        for(let side=0; side<this.vCount; side++) {
+            let phi = 2*Math.PI*side/this.vCount;
+            pts.push([this.radius*Math.cos(phi),this.radius*Math.sin(phi)]);
+        }
+        for(let side=0; side<this.vCount; side++) {
+            let hSegment = new HSegment(pts[side], pts[(side+1)%this.vCount]);
+            for(let i=0; i<m; i++) {
+                let p = hSegment.getPoint(i/m, -this.thickness);
+                let k = side*m+i;
+                buffer[4*k] = p[0];
+                buffer[4*k+1] = p[1];    
+                p = hSegment.getPoint(i/m, this.thickness);
+                buffer[4*k+2] = p[0];
+                buffer[4*k+3] = p[1];             
+            }
+        }
+    }
+}
+
 
 class HRegularPolygonMesh extends Mesh {
     constructor(gl, vCount, radius, m) {

@@ -49,8 +49,9 @@ class DiskViewer {
             twgl.resizeCanvasToDisplaySize(gl.canvas);
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;    
-            twgl.m4.ortho(-aspect, aspect, 1, -1, -1, 1, viewMatrix);
+            const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+            let rr = 1.1;    
+            twgl.m4.ortho(-aspect*rr, aspect*rr, rr, -rr, -1, 1, viewMatrix);
 
             viewer.entities.disk.material.setColor([1,1,1,1]);
             viewer.entities.disk.draw();
@@ -156,22 +157,28 @@ class DiskViewer {
     }
     
     _onKeyDown(e) {
-        console.log(e);
-        e.preventDefault();
-        e.stopPropagation();
         if(e.code == "ArrowLeft") {
-            if(this.currentSceneIndex>0) {
+            e.preventDefault();
+            e.stopPropagation();
+                if(this.currentSceneIndex>0) {
                 this.currentSceneIndex--;
                 this.setCurrentScene(this.scenes[this.currentSceneIndex]);
             }
         } else if(e.code == "ArrowRight") {
-            if(this.currentSceneIndex+1<this.scenes.length) {
+            e.preventDefault();
+            e.stopPropagation();
+                if(this.currentSceneIndex+1<this.scenes.length) {
                 this.currentSceneIndex++;
                 this.setCurrentScene(this.scenes[this.currentSceneIndex]);
             }
-
         }
-        else if(this.currentScene && this.currentScene.onKeyDown) this.currentScene.onKeyDown(e);
+        else if(this.currentScene && this.currentScene.onKeyDown) {
+            let ret = this.currentScene.onKeyDown(e);
+            if(ret) {
+                e.preventDefault();
+                e.stopPropagation();        
+            }
+        }
     }
 
 

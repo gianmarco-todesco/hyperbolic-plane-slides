@@ -349,5 +349,36 @@ class Tessellation {
         //let dt = performance.now() - startTime;
         return normalizeHMatrix(bestMatrix);
     }
+
+    adjustMatrix2(hMatrix, colorScramble) {
+        //let startTime = performance.now();
+        let bestMatrix = null;
+        let closestDistance;
+        let index = -1;
+        let currentDistance = getLength(pTransform(hMatrix, [0,0]));
+        for(let i=0; i<8; i++) {
+            let matrix = m4.multiply(hMatrix, this.baseMatrices[i]);
+            let p = pTransform(matrix, [0,0]);
+            let d = getLength(p);
+            if(bestMatrix == null || d < closestDistance) {
+                closestDistance = d;
+                bestMatrix = matrix;
+                index = i;
+            } 
+        }
+
+        if(index>=0 && closestDistance < currentDistance * 0.95) {
+            bestMatrix = normalizeHMatrix(bestMatrix);
+            for(let j=0;j<16;j++) hMatrix[j] = bestMatrix[j];
+            let scrambled = this.colorPermutations[index%4].map(i=>colorScramble[i]);
+            for(let j=0; j<4; j++) colorScramble[j] = scrambled[j];
+
+        } else {
+            let matrix = normalizeHMatrix(hMatrix);
+            for(let j=0;j<16;j++) hMatrix[j] = matrix[j];
+        }
+
+
+    }
 }
 

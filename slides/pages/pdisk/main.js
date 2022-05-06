@@ -27,7 +27,7 @@ function setup() {
     ];
 
     viewer = new DiskViewer({ scenes } );
-    // viewer.setCurrentScene(scenes[2]);
+    viewer.setCurrentScene(scenes[6]);
 
 }
 
