@@ -1,0 +1,56 @@
+----------------        
+Versione attuale
+----------------        
+
+1.punti e linee. solo click & drag
+
+2.disegno. c/canc => cancella; 0,1,2 per controllare il numero di rette
+
+    todo: 
+       draggable dot gerarchici in modo da avere un punto che sposta la retta e uno che la gira
+       sistemare le posizioni iniziali    
+
+3. ottagoni. 1,2,3
+     todo: inserire qui la tessellazione
+
+4. tassellazione {8,3}
+    todo: sfumatura celle
+
+5. tassellazione {6,4} coxeter
+     todo: visualizzare gli esagoni?
+
+6. {8,3} con colori (ancora in bianco e nero. forse serve solo per il titolo)
+
+7. circle limit III 
+     todo:
+        fare comparire 1..9 ottagoni
+        visualizzare solo un colore 
+        aggiungere gli ottagoni
+        scroll infinito
+        (aggiustare il disegno? ci sono ancora fessure enormi sigh!)
+        - aggiungere animazioni
+
+todo: 
+- aggiungere una tes di fantasia (ingranaggi?)
+- visualizzare la pseudosfera su {8,3}
+
+----------------        
+Versione vecchia
+----------------        
+
+1. punti e linee. solo click & drag
+2. disegno a mano libera. right-drag => pan iperbolico; r = toggle copie multiple; stroke con inizio e fine assottigliati
+3. ottagono. (puoi fare click&drag su ogni vertice)
+4. tess{8,3}. sfumatura 
+5. tess{6,4}
+6. tess{5,5}
+7. stelle spiraliformi su {7,3}
+8. anelli intrecciati su {5,5}
+
+
+circle limit III è su una pagina a parte
+-a/s per aggiungere togliere celle
+d per metterle tutte
+-p/o/i varie animazioni
+-1 toggle ottagoni
+-2 mostra un solo colore

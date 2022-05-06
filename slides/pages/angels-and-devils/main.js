@@ -1,9 +1,23 @@
 'use strict';
 
 let canvas, engine, scene, camera;
+let parameter = 0.0;
+const diskRadius = 3.0; // attenzione: non controlla ancora la dimensione della tassellazione
+let running = false;
+
 const slide = {
     name: 'Sodalite'
 };
+
+
+let hex;
+let meshes = [];
+let tess;
+let hexes;
+let trajectories;
+let tableNode;
+let tableMeshes = [];
+let extraHexes = [];
 
 
 function setup() {
@@ -18,8 +32,8 @@ function setup() {
     
     // camera
     camera = new BABYLON.ArcRotateCamera('cam', 
-            -Math.PI/2,0.7,
-            15, 
+            1.13,0,
+            8, 
             new BABYLON.Vector3(0,0,0), 
             scene);
     camera.attachControl(canvas,true);
@@ -32,13 +46,17 @@ function setup() {
     light1.parent = camera;
     
     // aggiungo i vari oggetti
+    let startTime = performance.now();
     populateScene(scene);
+    console.log("populate scene. time=", performance.now() - startTime);
     
     // main loop
     engine.runRenderLoop(()=>scene.render());
 
     // resize event
     window.addEventListener("resize", onResize);
+
+
 }
 
 function cleanup() {
@@ -61,65 +79,83 @@ function onResize() {
 function step(t,t0,t1) {
     return t<t0?0:t>t1?1:(t-t0)/(t1-t0);
 }
-/*
-function populateScene() {
-    let torus = BABYLON.MeshBuilder.CreateTorus('torus',{
-        diameter:6,
-        thickness:1,
-        tessellation:70
 
-    },scene);
-    torus.material = new BABYLON.StandardMaterial('mat',scene);
-    torus.material.diffuseColor.set(0.8,0.4,0.1);
 
-    scene.registerBeforeRender(() => {
-        let t = performance.now() * 0.001;
-        torus.rotation.x = t;
-    });
+function smoothstep(t,t0,t1) {
+    return t<t0?0:t>t1?1:0.5*(1.0-Math.cos(Math.PI*(t-t0)/(t1-t0)));
 }
-*/
 
 
-let hex;
-let meshes = [];
-let tess;
+function createTable() {
+    let height = 0.1;
+    let mainNode = new BABYLON.TransformNode('table-node', scene);
+    
+    let node = new BABYLON.TransformNode('table-node', scene);
+    node.parent = mainNode;
+    node.position.y = -height/2 - 0.001;
+
+    const radius = diskRadius+0.01;
+    let torus = BABYLON.MeshBuilder.CreateTorus('a', {
+        diameter:radius*2,
+        thickness:height,
+        tessellation:100
+    }, scene);
+    torus.parent = node;
+    tableMeshes.push(torus);
+
+    let topDisk = BABYLON.MeshBuilder.CreateDisc('a', { radius: radius}, scene);
+    topDisk.parent = node;
+    topDisk.rotation.x = Math.PI/2;
+    topDisk.position.y = height/2;
+    tableMeshes.push(topDisk);
+
+    let bottomDisk = topDisk.createInstance('table-bottom-disk');
+    bottomDisk.parent = node;
+    bottomDisk.rotation.x = -Math.PI/2;
+    bottomDisk.position.y = -height/2;
+    tableMeshes.push(bottomDisk);
+
+    node.position.y = -height/2 - 0.001 ;
+
+    let material = new BABYLON.StandardMaterial('table-mat', scene);
+    torus.material = material;
+    topDisk.material = material;
+    material.diffuseColor.set(0.2,0.3,0.4);
+
+    let border = BABYLON.MeshBuilder.CreateTorus('table-small-border', {
+        diameter:2*diskRadius,
+        thickness:0.05,
+        tessellation:100
+    }, scene);
+    border.parent = node;
+    border.position.y = height/2;
+    border.scaling.y = 0.01
+    let borderMaterial = new BABYLON.StandardMaterial('table-mat', scene);
+    border.material = borderMaterial;
+    borderMaterial.diffuseColor.set(0.1,0.1,0.1);
+    tableMeshes.push(border);
+
+    return mainNode;
+}
+
 
 function populateScene() {
-    createGrid(scene);
+    // createGrid(scene);
+    // createCubeGrid(scene);
+
     const V3 = (x,y,z) => new BABYLON.Vector3(x,y,z);
 
-    let lines1 = BABYLON.MeshBuilder.CreateLineSystem(
-        "lines", {
-            lines: [
-                [V3(1,1,1), V3(-1,1,1),V3(-1,1,-1),V3(1,1,-1), V3(1,1,1)],
-                [V3(1,-1,1), V3(-1,-1,1),V3(-1,-1,-1),V3(1,-1,-1), V3(1,-1,1)],
-                [V3(1,1,1),V3(1,-1,1)],
-                [V3(-1,1,1),V3(-1,-1,1)],
-                [V3(-1,1,-1),V3(-1,-1,-1)],
-                [V3(1,1,-1),V3(1,-1,-1)]
-            ]                
-        }, 
-        scene);
-    lines1.color.set(1,0.5,1)
+    tableNode = createTable();
+
 
     tess = new GenericTessellation(6,4);
     tess.addFirstShell();
-    for(let i=0; i<3; i++) tess.addShell();
+    for(let i=0; i<2; i++) tess.addShell();
     console.log(tess.cells.length);
 
     let cell = tess.cells[5];
     
-    /*
-    let lines2 = BABYLON.MeshBuilder.CreateLineSystem(
-        "lines", {
-            lines: [
-                [V3(0,-1,1), V3(-1,-1,0), V3(-1,0,1), V3(0,-1,1), V3(1,-1,0), V3(1,0,-1), V3(0,1,-1)]
-            ]                
-        }, 
-        scene);
-    lines1.color.set(1,0.5,1)
-    */
-
+    
     hex = new BendingHexagon();
     hex.createMesh();
     hex.mesh.material = new BABYLON.StandardMaterial('mat', scene);
@@ -132,224 +168,157 @@ function populateScene() {
     hex.mesh.isVisible = false;
 
 
-    let startTime = performance.now();
-    let hexes = [];
-    for(let i=0;i<100; i++) {
-        let hex2 = new BendingHexagon();
+    hexes = [];
+    for(let i=0;i<tess.cells.length; i++) {
+        let hex2 = i < 64 ? new BendingHexagon() : new BendingHexagon(3);
         hex2.createMesh();
         hex2.mesh.material = hex.mesh.material;
         hex2.computePoints2(tess,i)
         hex2.updateMesh(); 
+        hex2.mesh.parent = tableNode;
         hexes.push(hex2);
     }
-    console.log("time=", performance.now() - startTime)
-
+    for(let i=64;i<hexes.length; i++) extraHexes.push(hexes[i].mesh);
     
-    let hex2 = hexes[3];
-    
+    trajectories = createTrajectories();
 
+    scene.registerBeforeRender(animate);
 
-    
+    let pointerDown = false;
+    let pointerOldX = 0;
+    scene.onPointerObservable.add((pointerInfo) => {
+        switch (pointerInfo.type) {
+            case BABYLON.PointerEventTypes.POINTERDOWN:
+                if(pointerInfo.event.button == 2) {
+                    //pointerInfo.event.preventDefault();
+                    //pointerInfo.event.stopPropagation();
+                    //canvas.setPointerCapture(pointerInfo.event.pointerId);
+                    
+                    camera.inputs.attached.pointers.detachControl();
+                    pointerDown = true;
+                    pointerOldX = pointerInfo.event.clientX;
+                }
+            break;
+            case BABYLON.PointerEventTypes.POINTERUP:
+                // console.lo(pointerInfo);
+                if(pointerDown) {
+                    pointerDown = false;
+                    //pointerInfo.event.preventDefault();
+                    //pointerInfo.event.stopPropagation();
+                    //pointerInfo.event.stopImmediatePropagation();
+                    camera.inputs.attached.pointers.attachControl();
+                }
+            break;
+            case BABYLON.PointerEventTypes.POINTERMOVE:
+                if(pointerDown) {
+                    //pointerInfo.event.preventDefault();
+                    //pointerInfo.event.stopPropagation();
+                    let dx = pointerInfo.event.clientX - pointerOldX;
+                    pointerOldX = pointerInfo.event.clientX;
+                    onDrag(dx);
 
-
-    scene.registerBeforeRender(() => {
-        let t = performance.now() * 0.001;
-        //hex.parameter = 0.5 + 0.5 * Math.sin(t);
-        //hex.computePoints();
-        //hex.updateMesh();
-
-        let gParam = 0.5 + 0.5 * Math.sin(t*0.1);
-
-
-
-        for(let j=0;j<64;j++) {
-
-            let param = step(gParam, j/73, (j+10)/73);
-            let q = j>>3;
-            let i = j%8;
-            let h = hexes[j];
-            let pp = [
-                [1,1],[-1,1],[-1,-1],[1,-1],
-                [-1,-1],[1,-1],[1,1],[-1,1]];
-            h.vertices.forEach((v,i) => {
-                BABYLON.Vector3.LerpToRef(
-                    v.p0,
-                    hex.vertices[i].p,
-                    param,
-                    v.p
-                )
-            });
-            h.updateMesh();  
-            h.mesh.position.set(
-                param*(pp[i][0] - 2 + 4 * (q&1)),
-                param*(8 - 2*(i>>2) + 2 - 4 * ((q>>1)&1)),
-                param*(pp[i][1] - 2 + 4 * ((q>>2)&1)));
-            h.mesh.rotation.x = -(i%2)*Math.PI * param;
-            if(i&2) h.mesh.rotation.y = Math.PI * param;
-    
-            //h.mesh.rotation.y = (i%4)*Math.PI;
-        
+                }
+                // console.log(pointerInfo);
+            break;
         }
+    });
 
-        /*
-        hexes.forEach(hex2 => {
-            hex2.vertices.forEach((v,i) => {
-                let p0 = v.p0;
-                let p1 = hex.vertices[i].p;
-                let p = BABYLON.Vector3.Lerp(p0,p1,param);
-                v.p.copyFrom(p);
-            });
-            hex2.updateMesh();    
-        })
-        */
+    scene.onKeyboardObservable.add((kbInfo) => {
+        switch (kbInfo.type) {
+          case BABYLON.KeyboardEventTypes.KEYDOWN:
+            onKeyDown(kbInfo.event); // key, code
+            break;
+        }
     });
 }
 
 
+function onKeyDown(e) {
+    if(e.key == "p") running = !running;
+    
+}
 
-function createGrid(scene) {
-    
-    let Color4 = BABYLON.Color4;
-    let Vector3 = BABYLON.Vector3;
-     
-    let m = 50;
-    let r = 5;
-    let pts = [];
-    let colors = [];
-    let c1 = new Color4(0.7,0.7,0.7,0.5);
-    let c2 = new Color4(0.5,0.5,0.5,0.25);
-    let cRed   = new Color4(0.8,0.1,0.1);
-    let cGreen = new Color4(0.1,0.8,0.1);
-    let cBlue  = new Color4(0.1,0.1,0.8);
-    
-    let color = c1;
-    function line(x0,y0,z0, x1,y1,z1) { 
-        pts.push([new Vector3(x0,y0,z0), new Vector3(x1,y1,z1)]); 
-        colors.push([color,color]); 
+function onDrag(dx) {
+    parameter = Math.max(0.0, Math.min(1.0, parameter + dx * 0.001));
+    console.log(parameter); 
+}
+
+function createTrajectories() {
+    let trajectories = [];
+
+    for(let j=0;j<64;j++) {
+        let q = j>>3;
+        let i = j%8;
+        let pp = [
+            [1,1],[-1,1],[-1,-1],[1,-1],
+            [-1,-1],[1,-1],[1,1],[-1,1]];
+        let cellIndices = [4,5,0,2,6,7,1,3];
+        // change position
+        let targetPosition = new BABYLON.Vector3(
+            pp[i][0] - 2 + 4 * (q&1), 
+            3 - 2*(i>>2) - 4 * ((q>>1)&1), 
+            pp[i][1] - 2 + 4 * ((q>>2)&1));        
+        let targetQuaternion = BABYLON.Quaternion.FromEulerAngles(-(i%2)*Math.PI, i&2 ? Math.PI : 0, 0);
+        trajectories.push({cellIndex:cellIndices[q], targetPosition, targetQuaternion});
     }
-    
-    for(let i=0;i<=m;i++) {
-        if(i*2==m) continue;
-        color = (i%5)==0 ? c1 : c2;
-        let x = -r+2*r*i/m;        
-        line(x,0,-r, x,0,r);
-        line(-r,0,x, r,0,x);
-    }
-    
-    let r1 = r + 1;
-    let a1 = 0.2;
-    let a2 = 0.5;
-    
-    // x axis
-    color = cRed;
-    line(-r1,0,0, r1,0,0); 
-    line(r1,0,0, r1-a2,0,a1);
-    line(r1,0,0, r1-a2,0,-a1);
-        
-    // z axis
-    color = cBlue;
-    line(0,0,-r1, 0,0,r1); 
-    line(0,0,r1, a1,0,r1-a2);
-    line(0,0,r1,-a1,0,r1-a2);
-    
-    // y axis
-    color = cGreen;
-    line(0,-r1,0, 0,r1,0); 
-    line(0,r1,0, a1,r1-a2,0);
-    line(0,r1,0,-a1,r1-a2,0);
-    line(0,r1,0, 0,r1-a2,a1);
-    line(0,r1,0, 0,r1-a2,-a1);
-    
-    const lines = BABYLON.MeshBuilder.CreateLineSystem(
-        "lines", {
-                lines: pts,
-                colors: colors,
-                
-        }, 
-        scene);
-    return lines;    
-};
 
+    trajectories.sort((a,b) => {
+        if(a.cellIndex < b.cellIndex) return 1;
+        else if(a.cellIndex > b.cellIndex) return -1;
+        let pa = a.targetPosition;
+        let pb = b.targetPosition;
+        if(pa.y<pb.y) return 1;
+        else if(pa.y>pb.y) return -1;
+        let ra = pa.x*pa.x+pa.z*pa.z;
+        let rb = pb.x*pb.x+pb.z*pb.z;
+        return -(ra-rb);
+    });
 
-// poi dopo
+    // let tmp = trajectories[0]; trajectories[0] = trajectories[3]; trajectories[3] = tmp;
+    return trajectories;
+}
 
-/* questo si
-    let b = hex.mesh.createInstance('a');
-    b.position.set(0,0,-2);
-    b.rotation.y = Math.PI/2;
-    meshes.push(b);
-    b = hex.mesh.createInstance('a');
-    b.position.set(-2,0,-2);
-    b.rotation.y = Math.PI;
-    meshes.push(b);
-    b = hex.mesh.createInstance('a');
-    b.position.set(-2,0,0);
-    b.rotation.y = -Math.PI/2;
-    meshes.push(b);
+function setDiskIsVisible(visible) {
+    tableMeshes.forEach(mesh => mesh.isVisible = visible);
+    extraHexes.forEach(mesh => mesh.isVisible = visible);    
+}
 
-    b = hex.mesh.createInstance('a');
-    b.position.set(0,2,0);
-    b.rotation.x = Math.PI;
-    b.rotation.y = -Math.PI/2;
-    meshes.push(b);
+function animate() {
 
-    b = hex.mesh.createInstance('a');
-    b.position.set(-2,2,0);
-    // b.rotation.x = Math.PI;
-    b.rotation.y = Math.PI/2;
-    meshes.push(b);
+    if(running) parameter = Math.min(1.0, parameter + engine.getDeltaTime() * 0.001 * 0.05);
 
-    meshes[0].rotation.x=Math.PI;
-    meshes[0].rotation.y=Math.PI/2;
-    */
+    let gParam = step(parameter, 0.1, 1.0);
 
-    /*
+    setDiskIsVisible(parameter < 0.9);
+    tableNode.position.y = -2 * smoothstep(parameter, 0.0, 0.1) - 10 *  Math.pow(step(parameter,0.25, 1.0), 2);
 
-    let lines =[];
-    let n = 10, m = 30;
-    for(let i=0; i<n; i++) {
-        let t = i/(n-1);
-        let phi = Math.PI/4*t;
-        let p1 = V3(0,0,0);
-        let p4 = V3(1.0 - Math.sin(phi), 1.0,  1.0 - Math.cos(phi));
-        let v4 = V3(0,-1,0).scale(0.25);
-        let v1 = p4.subtract(p1).normalize().scale(0.25);
-        let p2 = p1.add(v1);
-        let p3 = p4.add(v4);
+    let tablePos = tableNode.position;
 
-        let single = [];
-        for(let j=0;j<m;j++) {
-            let s = j/(m-1);
-            let p12 = BABYLON.Vector3.Lerp(p1,p2,s);
-            let p23 = BABYLON.Vector3.Lerp(p2,p3,s);
-            let p34 = BABYLON.Vector3.Lerp(p3,p4,s);
-            let p123 = BABYLON.Vector3.Lerp(p12,p23,s);
-            let p234 = BABYLON.Vector3.Lerp(p23,p34,s);
-            let p = BABYLON.Vector3.Lerp(p123,p234,s);
-            single.push(p);
+    for(let j=0;j<64;j++) {
+
+        let flightTime = 0.25/8;
+        let param = 0;
+        if(j<8) {
+            let takeOff = 0.25*j*(1/8);
+            param = step(gParam, takeOff, takeOff + flightTime);
+        } else {
+            let takeOff = 0.25 + (j-8) * (1-0.25-flightTime)/63;
+            param = step(gParam, takeOff, takeOff + flightTime);
         }
-        lines.push(single);
+
+        let trajectory = trajectories[j];
+
+        let h = hexes[j];
+        // morph hexagon
+        h.vertices.forEach((v,vIndex) => BABYLON.Vector3.LerpToRef(v.p0,hex.vertices[vIndex].p,param,v.p));            
+        h.updateMesh();  
+
+        // change position
+        trajectory.targetPosition.subtract(tablePos).scaleToRef(param, h.mesh.position);
+
+        // rotate
+        BABYLON.Quaternion.Slerp(BABYLON.Quaternion.Identity(), trajectory.targetQuaternion, param).toEulerAnglesToRef(h.mesh.rotation);
+
     }
-    let lines3 = BABYLON.MeshBuilder.CreateLineSystem(
-        "lines", { lines },
-        scene);
-    lines3.color.set(0.4,0.4,1)
-*/
-    
-    /*
-    let torus = BABYLON.MeshBuilder.CreateTorus('torus',{
-        diameter:6,
-        thickness:1,
-        tessellation:70
 
-    },scene);
-    torus.material = new BABYLON.StandardMaterial('mat',scene);
-    torus.material.diffuseColor.set(0.8,0.4,0.1);
-
-    let sphere = BABYLON.MeshBuilder.CreateSphere('sphere',{
-        diameter:4
-    },scene);
-    sphere.material = new BABYLON.StandardMaterial('mat',scene);
-    sphere.material.diffuseColor.set(0.2,0.5,0.7);
-
-    */
+}

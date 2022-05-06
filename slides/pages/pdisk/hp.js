@@ -308,6 +308,30 @@ class HLine {
         let ww = w * getHThickness(x,y);
         return [x + wx*ww, y + wy*ww];
     }
+
+    getMirrorMatrix() {
+        let phi = Math.atan2(-this.cy, this.cx);
+        if(this.w == 0.0) {
+            // lines is a diameter
+            return [
+                m4.rotationZ(-phi),
+                m4.scaling([-1,1,1]),
+                m4.rotationZ(phi)
+            ].reduce((a,b) => m4.multiply(a,b));
+        } else {
+            // closest point to the origin
+            let x = this.cx + this.r * this.e0[0];
+            let y = this.cy + this.r * this.e0[1];
+            return [
+                hTranslation(x, y),
+                m4.rotationZ(-phi),
+                m4.scaling([-1,1,1]),
+                m4.rotationZ(phi),
+                hTranslation(-x, -y)                
+            ].reduce((a,b) => m4.multiply(a,b));
+            return m4.scaling([-1,1,1]);
+        }
+    }
 }
 
 

@@ -11,17 +11,20 @@ class DiskViewer {
         let gl = this.gl = canvas.getContext("webgl");
         const viewer = this;
 
+        // assign viewer and gl to scenes
         let scenes = this.scenes = options.scenes || [];
         scenes.forEach(scene => {
             scene.viewer = viewer;
             scene.gl = gl;
         });
         
+        // initialize opengl
         let bgColor = options.bgColor || [0.7,0.75,0.8,1];
         gl.clearColor(...bgColor);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+        // create common entities (e.g disk background and border)
         this.createEntities();
         
         // this.draggableDots = [];
@@ -48,10 +51,17 @@ class DiskViewer {
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;    
             twgl.m4.ortho(-aspect, aspect, 1, -1, -1, 1, viewMatrix);
-            viewer.entities.circle.material.setColor([0,0,0,1]);
-            viewer.entities.circle.draw();
+
+            viewer.entities.disk.material.setColor([1,1,1,1]);
+            viewer.entities.disk.draw();
+
+            
             if(viewer.currentScene && viewer.currentScene.render)
                 viewer.currentScene.render();
+
+            viewer.entities.circle.material.setColor([0,0,0,1]);
+            viewer.entities.circle.draw();
+    
             requestAnimationFrame(animate);
         }
         requestAnimationFrame(animate);      
@@ -60,7 +70,6 @@ class DiskViewer {
     stop() {
         this.running = false;
     }
-
 
     setCurrentScene(scene) {
         if(this.currentScene) {
@@ -87,7 +96,7 @@ class DiskViewer {
                 minDist = dist;
             }
         })
-        if(found && minDist < 0.5) return found;
+        if(found && minDist < 0.07) return found;
         else return null;
     }
 
@@ -117,14 +126,14 @@ class DiskViewer {
         let dot = this.getDotNearby(p);
         if(dot) {
             this.currentDot = dot;
-        } else if(this.onPointerDown) this.onPointerDown({x:p[0], y:p[1], e});
+        } else if(this.currentScene && this.currentScene.onPointerDown) this.currentScene.onPointerDown({x:p[0], y:p[1], e});
     }
     _onPointerUp(e) {
         this.buttonDown = false;
         if(this.currentDot) {
             this.currentDot = null;
-        } else if(this.onPointerDown) 
-            this.onPointerUp(e);
+        } else if(this.currentScene.onPointerUp) 
+            this.currentScene.onPointerUp(e);
     }
 
     _onPointerMove(e) {

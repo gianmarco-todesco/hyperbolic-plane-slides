@@ -1,11 +1,11 @@
 
 
 class BendingHexagon {
-    constructor() {
+    constructor(n = 5) {
         const V3 = (x,y,z) => new BABYLON.Vector3(x,y,z);
         this.parameter = 0;
         this.vertices = [];
-        let n = this.n = 5;
+        this.n = n;
         let sides = this.sides = [];
         this.uvs = [];
         let center = {side:null, r:0,j:0, links : [], p : V3(0,0,0)};

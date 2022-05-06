@@ -1,11 +1,11 @@
 
 
 // punti e rette
-class Scene1 {
+class PointsAndLinesScene {
 
     init() {
         const {gl, viewer} = this;
-        this.sdot1 = new Disk(gl, 0.01, 10);
+        // this.sdot1 = new Disk(gl, 0.01, 10);
 
         let dots = this.draggableDots = [];
         [[0,0],[0.5,0.2],[0.6,0.1],[-0.3,0.6],[-0.4,0.5]].forEach(([x,y]) => {
@@ -46,20 +46,15 @@ class Scene1 {
 }
 
 
-//----------------------
-
-
-
-
-
-
-//------------------------
+//-----------------------------------------------------------------------------
 
 
 // free hand drawing 
-class Scene2 {
+class FreeHandDrawingScene {
     init() {
         const {gl, viewer} = this;
+
+        this.hlineCount = 0;
         let textureCanvas = this.textureCanvas = new OffscreenCanvas(1024,1024);
         this.textureCtx = textureCanvas.getContext('2d');
         this.textureCtx.fillStyle='transparent';
@@ -69,112 +64,81 @@ class Scene2 {
         disk.material = new HyperbolicInvertedTexturedMaterial(gl);
         disk.material.uniforms.texture = twgl.createTexture(gl, {src: textureCanvas});
 
-       
+        let dots = this.draggableDots = [];
+        [[0,0],[0.5,0.2],[0.6,0.1],[0.6,0.3]].forEach(([x,y]) => {
+            let dot = new DraggableDot(viewer, x,y);
+            this.draggableDots.push(dot);
+        })
+
+        this.dot1 = dots[0];
+        this.dot2 = dots[1];
+        this.dot3 = dots[2];
+        this.dot4 = dots[3];
         
-        //let isDown = false, px, py, 
-        //bw = this.width, bh = this.height;
-  
-        /*
-    c.onmousedown = c.ontouchstart = function(e) {
-      isDown = true;
-      var pos = getPos(e);
-      px = pos.x;
-      py = pos.y;
-    };
-  
-    window.onmousemove = window.ontouchmove = function(e) {
-      if (isDown) draw(e);
-    };
-  
-    window.onmouseup = window.ontouchend = function(e) {
-      e.preventDefault();
-      isDown = false
-    };
-  
-    function getPos(e) {
-      e.preventDefault();
-      if (e.touches) e = e.touches[0];
-      var r = c.getBoundingClientRect();
-      return {
-        x: e.clientX - r.left,
-        y: e.clientY - r.top
-      }
-    }
-  
-    function draw(e) {
-      var pos = getPos(e);
-      brushLine(ctx, px, py, pos.x, pos.y);
-      px = pos.x;
-      py = pos.y;
-    }
-  
-    
-  }
-  */
-
-    }
-
-
-    brushLine(ctx, x1, y1, x2, y2) {
-        let 
-            diffX = Math.abs(x2 - x1),
-            diffY = Math.abs(y2 - y1),
-            dist = Math.sqrt(diffX * diffX + diffY * diffY);
-
+        this.hLine1 = new HLineMesh(gl, 50);
+        this.hLine2 = new HLineMesh(gl, 50);
         
-        //let bw = this.brush.width;
-        //let bh = this.brush.height;
-        let bw = 10;
-        let step = bw / (dist ? dist : 1),
-            i = 0,
-            t = 0,
-            b, x, y;
-        
-        while (i <= dist) {
-            t = Math.max(0, Math.min(1, i / dist));
-            x = x1 + (x2 - x1) * t;
-            y = y1 + (y2 - y1) * t;
-            b = (Math.random() * 3) | 0;
-            ctx.putImageData(this.brush, x - 32, y - 32);
-            // ctx.fillRect(x-5,y-5,10,10);
-            i += step
-        }
-    }
 
+    }
 
     render() {
-        const {gl, viewer, disk} = this;
-        disk.draw();
-        let matrix = hTranslation(-0.5,0.0);
-        disk.material.uniforms.hModelMatrix = 
-            m4.multiply(matrix, m4.multiply(m4.scaling([-1,1,1]), m4.inverse(matrix)));
-        disk.draw();
-        disk.material.uniforms.hModelMatrix = m4.identity();
+        const {gl, viewer, disk, dot1,dot2, dot3, dot4, hLine1, hLine2} = this;
 
+        hLine1.setByPoints(dot1.pos, dot2.pos);
+        hLine2.setByPoints(dot3.pos, dot4.pos);
 
-        for(let i=1; i<10; i++) {
-            disk.material.uniforms.hModelMatrix = m4.multiply(hTranslation(-0.3,0.0), disk.material.uniforms.hModelMatrix);
+        // draw disk (with texture)
+        disk.draw();
+
+        if(this.hlineCount>0) {
+            if(this.hlineCount == 1) {
+                disk.material.uniforms.hModelMatrix =  hLine1.hline.getMirrorMatrix();
+            } else  {
+                disk.material.uniforms.hModelMatrix =  m4.multiply(
+                    hLine1.hline.getMirrorMatrix(),
+                    hLine2.hline.getMirrorMatrix());
+            }
             disk.draw();
-
+            disk.material.uniforms.hModelMatrix = m4.identity();
         }
-        disk.material.uniforms.hModelMatrix = m4.identity();
+
+
+        if(this.hlineCount>0) {
+            hLine1.material.setColor([0,0.5,1,1]);
+            hLine1.draw();
+            if(this.hlineCount==2) {
+                hLine2.draw();
+            }
+        }
+
+        if(this.hlineCount>0) {
+            dot1.draw();
+            dot2.draw();
+            if(this.hlineCount==2) {
+                dot3.draw();
+                dot4.draw();
+            }
+        }
     }
 
-    onPointerDown(e) {
-        console.log(e);
+    getTexturePointFromEvent(e) {
         let x = 1024 * (0.5 + e.x * 0.5);
         let y = 1024 * (0.5 + e.y * 0.5);
+        return {x,y};
+    }
+    onPointerDown(e) {
+        let {x,y} = this.getTexturePointFromEvent(e);
         this.oldx = x;
         this.oldy = y;
+        console.log("qui");
 
     }
     onPointerDrag(e) {
-        console.log(e);
-        let x = 1024 * (0.5 + e.x * 0.5);
-        let y = 1024 * (0.5 + e.y * 0.5);
+        let {x,y} = this.getTexturePointFromEvent(e);
 
         let ctx = this.textureCtx;
         
+        /*
         if(!this.brush) {
             var size = 64;
             let buffer = new Uint8ClampedArray(size * size * 4);
@@ -197,51 +161,48 @@ class Scene2 {
         }
 
         ctx.putImageData(this.brush, x - 32, y - 32);
+        */
 
-        //this.brushLine(this.textureCtx, this.oldx, this.oldy, x,y);
+        ctx.lineWidth = 15;
+        ctx.strokeStyle = "orange";
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(this.oldx,this.oldy);
+        ctx.lineTo(x,y);
+        ctx.stroke();
         this.oldx = x;
         this.oldy = y;
 
-        this.textureCtx.fillStyle='black';
-        this.textureCtx.fillRect(x - 5, y - 5, 10, 10);
         this.disk.material.updateTexture(this.disk.material.uniforms.texture, this.textureCanvas);
     }
-}
 
+    onKeyDown(e) {
+        console.log(e);
+        if(e.key=="0") {
+            this.hlineCount = 0;
+            this.draggableDots = [];
 
-// one octagon
-class Scene3 {
-    init() {
-        const {gl, viewer} = this;
+        } else if(e.key=="1") {
+            this.hlineCount = 1;
+            this.draggableDots = [this.dot1, this.dot2];
+        } else if(e.key=="2") {
+            this.hlineCount = 2;
+            this.draggableDots = [this.dot1, this.dot2, this.dot3, this.dot4];
+        } else if(e.key=='c' || e.key=="Delete") {
+            let ctx = this.textureCtx;
+            ctx.clearRect(0,0,1024,1024);
+            this.disk.material.updateTexture(this.disk.material.uniforms.texture, this.textureCanvas);
+        }
 
-        let dots = this.draggableDots = [];
-        [[0.2,0.1]].forEach(([x,y]) => {
-            let dot = new DraggableDot(viewer, x,y);
-            this.draggableDots.push(dot);
-        })
-        this.dot1 = dots[0];
-        this.hPolygon = new HRegularPolygon(gl, 8, 0.5);
-    }
-
-    render() {
-        const {gl, viewer, dot1, hPolygon} = this;
-
-        hPolygon.setFirstVertex(dot1.pos);
-
-        hPolygon.matrix = m4.identity();
-        hPolygon.draw();
-
-        hPolygon.drawVertices(viewer.entities.dot);
         
-        hPolygon.matrix = m4.identity();
-
-        dot1.draw();
     }
 }
 
-// two octagons
+//-----------------------------------------------------------------------------
 
-class Scene4 {
+
+class OctagonsScene {
     init() {
         const {gl, viewer} = this;
 
@@ -252,6 +213,9 @@ class Scene4 {
         })
         this.dot1 = dots[0];
         this.hPolygon = new HRegularPolygon(gl, 8, 0.5);
+
+        this.step = 1;
+
     }
 
     render() {
@@ -259,31 +223,48 @@ class Scene4 {
 
         hPolygon.setFirstVertex(dot1.pos);
 
-        hPolygon.matrix = m4.identity();
-        hPolygon.draw();        
 
-        hPolygon.matrix = hPolygon.getEdgeMatrix(0); //  hTranslation(0.3,0.4);
-        hPolygon.draw();
-        hPolygon.matrix = hPolygon.getEdgeMatrix(-1); //  hTranslation(0.3,0.4);
-        hPolygon.draw();
-        hPolygon.matrix = m4.identity();
+        let matrices = [m4.identity()];
+        if(this.step == 2) matrices.push(hPolygon.getEdgeMatrix(0));
+        else if(this.step == 3) matrices.push(hPolygon.getEdgeMatrix(0), hPolygon.getEdgeMatrix(-1));
 
-        hPolygon.drawVertices(viewer.entities.dot);
+        // draw polygons
+        matrices.forEach(matrix => {
+            hPolygon.matrix = matrix;
+            hPolygon.draw();    
+        })
 
-        hPolygon.matrix = hPolygon.getEdgeMatrix(0); //  hTranslation(0.3,0.4);
-        hPolygon.drawVertices(viewer.entities.dot);
-        hPolygon.matrix = hPolygon.getEdgeMatrix(-1); //  hTranslation(0.3,0.4);
-        hPolygon.drawVertices(viewer.entities.dot);
+        // draw polygons vertices
+        viewer.entities.dot.material.setColor([0,0,0,1]);
+        matrices.forEach(matrix => {
+            hPolygon.matrix = matrix;
+            hPolygon.drawVertices(viewer.entities.dot);
+        });
+
         hPolygon.matrix = m4.identity();
 
         dot1.draw();
     }
+
+
+    onKeyDown(e) {
+        console.log(e);
+        if(e.key=="1") {
+            this.step = 1;
+        } else if(e.key=="2") {
+            this.step = 2;
+        } else if(e.key=="3") {
+            this.step = 3;
+        }
+}
+
 }
 
 
+//-----------------------------------------------------------------------------
 
 
-class Scene5 {
+class TessellationScene {
     init() {
         const {gl, viewer, disk} = this;
         let tess = this.tess = new GenericTessellation(8,3);
@@ -330,7 +311,9 @@ class Scene5 {
 }
 
 
-class Scene6 {
+//-----------------------------------------------------------------------------
+
+class CoxeterTessellation {
     init() {
         const {gl, viewer, disk} = this;
         let tess = this.tess = new GenericTessellation(6,4);
@@ -400,6 +383,8 @@ class Scene6 {
     }
 }
 
+
+//-----------------------------------------------------------------------------
 
 class Scene7 {
     init() {
@@ -511,9 +496,11 @@ class Scene7 {
 }
 
 
+//-----------------------------------------------------------------------------
 
 
-class Scene8 {
+
+class CircleLimitIIIScene {
     init() {
         const {gl, viewer, disk} = this;
         let tess = this.tess = new Tessellation();
