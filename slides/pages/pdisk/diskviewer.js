@@ -22,6 +22,7 @@ class DiskViewer {
         let bgColor = options.bgColor || [0.7,0.75,0.8,1];
         gl.clearColor(...bgColor);
         gl.enable(gl.BLEND);
+        gl.disable(gl.DEPTH_TEST);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         // create common entities (e.g disk background and border)

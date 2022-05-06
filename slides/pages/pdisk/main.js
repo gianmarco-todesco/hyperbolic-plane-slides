@@ -16,6 +16,7 @@ function setup() {
 
 
     let scenes = [
+        new GearTessellation(),
         new PointsAndLinesScene(),
         new FreeHandDrawingScene(),
         new OctagonsScene(),
@@ -27,7 +28,7 @@ function setup() {
     ];
 
     viewer = new DiskViewer({ scenes } );
-    viewer.setCurrentScene(scenes[6]);
+    // viewer.setCurrentScene(scenes[6]);
 
 }
 

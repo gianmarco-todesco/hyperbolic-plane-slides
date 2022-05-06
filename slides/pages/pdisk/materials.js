@@ -243,8 +243,12 @@ class HyperbolicTexturedMaterialBis extends Material {
             }
 
             void main() {
-                vec2 q = h2p(hInvMatrix * p2h(v_pos));
-                gl_FragColor = texture2D(texture, vec2(0.5, 0.5) + q * 0.5); 
+                vec2 q = vec2(0.5, 0.5) + h2p(hInvMatrix * p2h(v_pos)) * 0.5;
+
+                vec4 outColor1 = texture2D(texture, q);
+                // vec4 outColor2 = texture2D(texture, q + vec2(0.002, 0.002));
+                gl_FragColor = outColor1;
+
             } 
             `,
             uniforms: {

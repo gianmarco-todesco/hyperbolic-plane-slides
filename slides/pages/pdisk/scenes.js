@@ -604,3 +604,32 @@ class CircleLimitIIIScene {
         // this.hMatrix = m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix);
     }
 }
+
+//-----------------------------------------------------------------------------
+
+class GearTessellation {
+    init() {
+        const {gl, viewer, disk} = this;
+        let tess = this.tess = new GenericTessellation(8,3);
+        tess.addFirstShell();
+        for(let i=0;i<1;i++) tess.addShell();
+        this.hPolygon = new HGearMesh(gl, 8, tess.R); // new HRegularPolygonOutlineMesh(gl, 8, tess.R, 60);
+        this.hMatrix = m4.identity();
+        
+
+    }
+
+    render() {
+        this.hPolygon.material.uniforms.hViewMatrix = this.hMatrix;
+        this.tess.cells.forEach(cell => {
+            this.hPolygon.material.uniforms.hModelMatrix = cell.mat;
+            this.hPolygon.draw();
+        })
+        this.hPolygon.material.uniforms.hModelMatrix = m4.identity();
+        this.hPolygon.material.uniforms.hViewMatrix = m4.identity();
+    }
+
+    onPointerDrag(e) {
+        this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
+    }
+}

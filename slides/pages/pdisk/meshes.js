@@ -268,3 +268,53 @@ class HRegularPolygon {
         );
     }
 }
+
+
+
+
+
+
+class HGearMesh extends Mesh {
+    constructor(gl, vCount, radius, m = 10) {
+        super(gl, gl.LINE_STRIP, getSimpleHyperbolicMaterial(gl));
+        this.vCount = vCount;
+        this.radius = radius;
+        this.m = m;
+        const attributes = this.attributes = { position: { data: [], numComponents: 2 } };    
+        this._computePts();
+        this.createBufferInfo(attributes);
+    }  
+
+    _computePts() {
+        const m = this.m;
+        const buffer = this.attributes.position.data;
+        let pts = [];
+        for(let side=0; side<this.vCount; side++) {
+            let phi = 2*Math.PI*side/this.vCount;
+            pts.push([this.radius*Math.cos(phi),this.radius*Math.sin(phi)]);
+        }
+        for(let side=0; side<this.vCount; side++) {
+            this._addSegment(pts[side], pts[(side+1)%this.vCount]);
+            this._addSegment([0,0], pts[(side+1)%this.vCount]);
+            /*
+            let hSegment = new HSegment(pts[side], pts[(side+1)%this.vCount]);
+            for(let i=0; i<m; i++) {
+                let p = hSegment.getPoint(i/m);
+                let k = side*m+i;
+                buffer.push(p[0], p[1]);
+            }
+            */
+        }
+    }
+
+    _addSegment(p0, p1) {
+        const buffer = this.attributes.position.data;
+        let m = 10;
+        let hSegment = new HSegment(p0,p1);
+        for(let i=0; i<m; i++) {
+            let p = hSegment.getPoint(i/m);
+            
+            buffer.push(p[0], p[1]);
+        }
+    }
+}
