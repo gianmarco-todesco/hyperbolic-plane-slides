@@ -1,4 +1,5 @@
 
+// ATTENZIONE. questo va usato per sodalite. NON per paradiso & inferno
 
 class BendingHexagon {
     constructor(n = 10) {
@@ -100,7 +101,7 @@ class BendingHexagon {
                     let q = g1.scale(r).add(g0.scale(j));
                     let psi = Math.atan2(q.y,q.x);
                     let factor = Math.abs(Math.sin(psi*3));
-                    q = q.scale(1-factor*0.08);
+                    // q = q.scale(1-factor*0.08); // attenzione!! Questo serve per le texture con gli angeli e i diavoli
                     this.uvs.push(0.5+q.x,0.5+q.y);
                 }
             }
