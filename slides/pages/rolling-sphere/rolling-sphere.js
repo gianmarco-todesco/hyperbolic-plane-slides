@@ -19,7 +19,7 @@ function setup() {
     // camera
     camera = new BABYLON.ArcRotateCamera('cam', 
             -Math.PI/2,0.0,
-            15, 
+            20, 
             new BABYLON.Vector3(0,0,0), 
             scene);
     camera.attachControl(canvas,true);
@@ -179,25 +179,32 @@ function populateScene() {
 
 
 function onKeyDown(e) {
-    console.log(e);
-    var animation = new BABYLON.Animation(
-        "myAnimation", 
-        "position.x", 
-        30, 
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT, 
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
-    var keys = [{frame:0, value:30}, {frame:20, value:0}];
-    animation.setKeys(keys);
+    if(e.key == "p") {
+        console.log(e);
+        var animation = new BABYLON.Animation(
+            "myAnimation", 
+            "position.x", 
+            30, 
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT, 
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        var keys = [{frame:0, value:30}, {frame:70, value:0}];
+        animation.setKeys(keys);
+    
+        var easingFunction = new BABYLON.QuarticEase();
+        easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+    
+        animation.setEasingFunction(easingFunction);
+    
+        ball.animations = [animation];
+    
+        scene.beginAnimation(ball, 0,100, true);
+    
+    } else if(e.key == "f") {
+        let f2 = document.getElementById("f2");
+        f2.style.visibility = f2.style.visibility == "hidden" ? "visible" : "hidden";
 
-    var easingFunction = new BABYLON.QuarticEase();
-    easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-
-    animation.setEasingFunction(easingFunction);
-
-    ball.animations = [animation];
-
-    scene.beginAnimation(ball, 0,100, true);
+    }
 }
 
 

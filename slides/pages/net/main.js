@@ -84,7 +84,12 @@ function populateScene() {
             if(kbInfo.event.key == "q") {
                 net.addNextFace();
                 //netViewer.update(net);
-            }
+            } 
+            else if(kbInfo.event.key == "1") { net.setType(0); }
+            else if(kbInfo.event.key == "2") { net.setType(1); }
+            else if(kbInfo.event.key == "3") { net.setType(2); }
+            else if(kbInfo.event.key == "4") { net.setType(3); }
+            else if(kbInfo.event.key == "5") { net.setType(4); }
             break;
           case BABYLON.KeyboardEventTypes.KEYUP:
             // onKeyUp(kbInfo.event); 
@@ -96,16 +101,17 @@ function populateScene() {
 
 class NetViewer {
     constructor() {
-        this.sphereMesh = BABYLON.MeshBuilder.CreateSphere('s',{diameter:0.2}, scene);
+        this.sphereMesh = BABYLON.MeshBuilder.CreateSphere('s',{diameter:0.05}, scene);
         this.sphereMesh.material = new BABYLON.StandardMaterial('smat', scene);
-        this.sphereMesh.material.diffuseColor.set(1,0,1);
+        this.sphereMesh.material.diffuseColor.set(0.1,0.1,0.3);
         this.sphereMesh.isVisible = false;
+
         this.verticesInstances = [];
-        this.cylinderMesh = BABYLON.MeshBuilder.CreateCylinder('c',{diameter:0.1, height:1}, scene);
+
+        this.cylinderMesh = BABYLON.MeshBuilder.CreateCylinder('c',{diameter:0.01, height:1}, scene);
         this.cylinderMesh.material = new BABYLON.StandardMaterial('cmat', scene);
         this.cylinderMesh.isVisible = false;
         this.cylinderMesh.material.diffuseColor.set(0,1,1);
-        this.verticesInstances = [];
         this.edgesInstances = [];
 
         let vd = this.vd = new BABYLON.VertexData();
@@ -122,9 +128,29 @@ class NetViewer {
         let mesh = this.trianglesMesh = new BABYLON.Mesh('surface', scene);
         vd.applyToMesh(mesh, true);
         mesh.material = new BABYLON.StandardMaterial('tmat', scene);
-        mesh.material.diffuseColor.set(0,0.4,0.8);
+        mesh.material.diffuseColor.set(0.8,0.8,0.8);
+        mesh.material.specularColor.set(0.1,0.1,0.1);
         mesh.material.backFaceCulling = false;
         mesh.material.twoSidedLighting = true;
+
+        /*
+        let tx = this.texture = new BABYLON.DynamicTexture('dt', {width:1024,height:1024}, scene);
+        let ctx = tx.getContext();
+        ctx.fillStyle = "white";
+        ctx.fillRect(0,0,1024,1024);
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(512,0);
+        ctx.lineTo(0,512);
+        ctx.closeSubPath();
+        ctx
+        tx.update();
+        mesh.material.diffuseTexture = this.texture;
+
+        */
+    
+
     }
 
     update(net) {        
@@ -299,7 +325,7 @@ class Net {
                 let v1 = e.sideVertices[0];
                 let v2 = e.sideVertices[1];
                 var joint = new BABYLON.PhysicsJoint(BABYLON.PhysicsJoint.SpringJoint, {
-                    length: 1.5,
+                    length: 2.0,
                     stiffness: 1,
                     damping: 0.1
                 });

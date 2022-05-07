@@ -16,13 +16,22 @@ function setup() {
 
 
     let scenes = [
-        new GearTessellation(),
+
+        // new Scene7(),
+
         new PointsAndLinesScene(),
         new FreeHandDrawingScene(),
         new OctagonsScene(),
-        new TessellationScene(),
+
+        new Tessellation83Scene(),
+        new Tessellation64Scene(),
+        new Tessellation55Scene(),
         new CoxeterTessellation(),
-        new Scene7(),
+        new GearTessellation(),
+        //new Scene7(),
+
+        //new PseudoSphereScene(),
+
         new CircleLimitIIIScene(),
                 
     ];

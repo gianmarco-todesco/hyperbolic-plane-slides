@@ -205,15 +205,26 @@ class DraggableDot {
         this.x = x;
         this.y = y;
         this.fillColor = [1,0,1,1];
-        this.strokeColor = [0,0,0,1];        
+        this.strokeColor = [0,0,0,1];    
+        this.children = [];    
     } 
 
     get pos() {
         return [this.x, this.y];
     }
     set pos(p) {
+        let oldx = this.x;
+        let oldy = this.y;
         this.x = p[0];
-        this.y = p[1];        
+        this.y = p[1];
+        if(this.children.length>0) {
+            let delta = m4.multiply(hTranslation(this.x,this.y), hTranslation(-oldx,-oldy));
+            this.children.forEach(child => {
+                let p = pTransform(delta, [child.x, child.y]);
+                child.x = p[0];
+                child.y = p[1];
+            }); 
+        }        
     }
 
     draw() {

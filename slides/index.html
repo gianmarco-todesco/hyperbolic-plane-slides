@@ -4,8 +4,12 @@
 		<meta charset="utf-8">
 		<title>Escher e il piano iperbolico</title>
         <meta name="author" content="Gian Marco Todesco">
+        <!--
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.0/reveal.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.0/theme/beige.css">
+        -->
+        <link rel="stylesheet" href="libs/css/reveal.css">
+        <link rel="stylesheet" href="libs/css/beige.css">
     		
         <!-- link rel="stylesheet" href="style.css" -->
         <style>
@@ -31,18 +35,25 @@
 .reveal h4
  { font-family: Lato, sans-serif;}
 
- .reveal h3,.reveal h4 { margin:0; } 
+.reveal h3,.reveal h4 { margin:0; } 
 
- .r-stack img { height:100%; }
+.uffimg { height:900px; }
+.r-stack img { height:900px; }
 .images-row img { margin-left : 20px; margin-right: 20px; border:solid 1px black; box-shadow: 5px 5px 5px gray;}
+
+.images-grid { position:flex; flex-direction: column; gap:20px; }
+.images-grid-row { flex-direction: row; column-gap: 30px;}
+.images-grid img { border:solid 1px gray; box-shadow: 5px 5px 5px gray; margin:10px; height:480px;}
+
         </style>
 	</head>
 	<body>
 		<div class="reveal">
 			<div class="slides">
 				<section>
-                    <h1>Escher e il piano iperbolico</h1>
-                    <img class="stretch" src="images/title.png">
+                    <img class="stretch" src="images/title2.png" style="border-bottom:solid 1px black;">
+                    <h2>Escher e il piano iperbolico</h2>
+                    <p>Gian Marco Todesco - gianmarco.todesco@gmail.com</p>
 
                 </section>
 				<section>
@@ -73,30 +84,23 @@
 				<section>
                     <h4>Figure impossibili</h4>
                     <div class="r-stack stretch">
-                        <img class="fragment fade-out stretch" data-fragment-index="0"  src="images/fluorescent-sea.jpg">
-                        <img class="fragment fade-in-then-out stretch" data-fragment-index="0"  src="images/tropea.jpg">
-                        <img class="fragment fade-in-then-out stretch" src="images/pollino.jpg">
-                    </div>
-                </section>
-				<section>
-                    <h4>Figure impossibili</h4>
-                    <div class="r-stack stretch">
-                        <img class="fragment fade-out " data-fragment-index="0" height="1000" src="images/ascending-and-descending.jpg">
-                        <img class="fragment fade-in-then-out " data-fragment-index="0" height="1000" src="images/escher-belvedere.jpg">
+                        <img class="fragment fade-out " data-fragment-index="0" height="800" src="images/ascending-and-descending.jpg">
+                        <img class="fragment fade-in-then-out " data-fragment-index="0" height="800" src="images/escher-belvedere.jpg">
                     </div>
                 </section>
 				<section>
                     <h4>Matematica</h4>
                     <div class="r-stack stretch">
-                        <img class="fragment fade-out " data-fragment-index="0" height="1000" src="images/escher-reptiles.jpg">
-                        <img class="fragment fade-in-then-out " data-fragment-index="0" height="1000" src="images/escher-print-gallery.jpg">
-                        <img class="fragment fade-in stretch" height="1000" src="images/horses.png">
+                        <img class="fragment fade-out " data-fragment-index="0" height="600" src="images/escher-reptiles.jpg">
+                        <img class="fragment fade-in-then-out " data-fragment-index="0" height="600" src="images/escher-print-gallery.jpg">
+                        <img class="fragment fade-in stretch" height="600" src="images/horses.png">
                     </div>
                 </section>
                 
                 
 				<section>
                     <h3>Harold Scott MacDonald Coxeter</h3>
+                    <p>(1907 - 2003)</p>
                     <img class="stretch" src="./images/coxeter.png">
                 </section>
 
@@ -125,24 +129,48 @@
                 </section>
 
                 <section>
-                    <table>
-                        <row><td><img src="images/cl1.jpg"></td><img src="images/cl2_small.png"><td></td></row>
-                        <row><td><img src="images/cl3.png"></td><img src="images/cl4_small.png"><td></td></row>
-                    </table>
+                    <div class="stretch images-grid">
+                        <div class="images-grid-row">
+                            <img src="images/cl1.jpg" height="500">
+                            <img src="images/cl2_small.png" height="500">
+                        </div>
+                        <div class="images-grid-row">
+                            <img src="images/cl3.png" height="500">
+                            <img src="images/cl4.png" height="500">
+                        </div>
+                    </div>
                 </section>
 
                 <!-- rolling sphere -->
+                <section>
+                    <p style="margin-bottom:10px">Un primo tentativo di mettere l'infinito in un cerchio ...</p>
+                    
+                    <iframe data-src="pages/rolling-sphere/rolling-sphere.html" class="stretch"></iframe>
+
+                </section>
+
+                <!--section>
+                    <img class="stretch" src="images/f2.png">
+                </section -->
+
                 <section 
-                    data-background-iframe="pages/rolling-sphere/rolling-sphere.html" 
+                    data-background-iframe="pages/pdisk/index.html" 
                     data-background-interactive>
                 </section>
 
                 <section>
-                    <img class="stretch" src="images/f2.png">
+                    <h3>Intermezzo</h3>
+                    <iframe class="stretch" src="images/ACVweb72finale.pdf"></iframe>
+                    <p>Anna Chiara Vicini</p>
+                </section>
+                <!-- pseudosphere -->
+                <section 
+                    data-background-iframe="pages/pseudosphere/pseudosphere.html" 
+                    data-background-interactive>
                 </section>
 
                 <section 
-                    data-background-iframe="pages/pdisk/index.html" 
+                    data-background-iframe="pages/pdisk/index_bis.html" 
                     data-background-interactive>
                 </section>
 
@@ -167,10 +195,17 @@
                     <div class="r-stack stretch">
                         <img class="fragment fade-out" data-fragment-index="0" style="height:90%" 
                             src="images/crochet3.png">
-                        <img class="fragment" data-fragment-index="0" style="height:90%" 
+                        <img class="fragment fade-in-then-out" data-fragment-index="0" style="height:90%" 
                             src="images/crochet4.png">
+                            <img class="fragment fade-in" style="height:90%" 
+                            src="images/uncinetto.jpg">
                     </div>
                 </section>
+                <section>
+                    <img src="images/taimina.jpg" class="stretch">
+                    <p>Daina Taimina</p>
+                </section>
+                
 
                 <section 
                     data-background-iframe="pages/cubic-angels-and-devils/index.html" 
@@ -195,6 +230,7 @@
 
 			</div>
 		</div>
+        <script src="libs/reveal.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.0/reveal.js"></script>
 		<script>
 			Reveal.initialize({

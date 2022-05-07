@@ -66,3 +66,28 @@ Da controllare con attenzione:
 Finire:
 	angeli e diavoli. 3 sole facce. cubo. sfera.
 	sodalite
+
+
+
+-----------------------
+
+
+Ultime note.
+
+Il titolo!
+
+scambia ingranaggi e coxeter.
+aggiung visualizzazione poligoni su queste due
+
+manca la selezione dei colori, ma forse non serve
+
+nella figura con la pseudo sfera su poincare
+   bisognerebbe normalizzare la sola matrice della tess.
+   
+più foto della taima
+aggiungere PDF con il fumetto.
+
+in net mostra il pallone da calcio.
+servirebbe distinguere il colore dei vertici
+
+aggiungere un calcio in direzione centripeta

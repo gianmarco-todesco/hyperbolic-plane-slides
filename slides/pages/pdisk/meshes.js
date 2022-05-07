@@ -115,7 +115,7 @@ class HRegularPolygonOutlineMesh extends Mesh {
         this.vCount = vCount;
         this.radius = radius;
         this.m = m;
-        const attributes = this.attributes = { position: { data: new Array(m*2*vCount), numComponents: 2 } };    
+        const attributes = this.attributes = { position: { data: new Array(m*2*vCount+2), numComponents: 2 } };    
         this._computePts();
         this.createBufferInfo(attributes);
     }  
@@ -137,6 +137,9 @@ class HRegularPolygonOutlineMesh extends Mesh {
                 buffer[2*k+1] = p[1];                
             }
         }
+        let vCount = this.vCount;
+        buffer[m*2*vCount] = buffer[0];
+        buffer[m*2*vCount+1] = buffer[1];        
     }
 }
 
@@ -337,6 +340,92 @@ class HGearMesh extends Mesh {
         }
         */
 
+    }
+
+    _addSegment(p0, p1) {
+        const buffer = this.attributes.position.data;
+        let m = 10;
+        let hSegment = new HSegment(p0,p1);
+        for(let i=0; i<m; i++) {
+            let p = hSegment.getPoint(i/m);
+            
+            buffer.push(p[0], p[1]);
+        }
+    }
+}
+
+
+
+
+class HPseudoSphereMesh extends Mesh {
+    constructor(gl) {
+        super(gl, gl.LINE_STRIP, getSimpleHyperbolicMaterial(gl));
+        const attributes = this.attributes = { position: { data: [], numComponents: 2 } };    
+        this._computePts();
+        this.createBufferInfo(attributes);
+    }  
+
+    _computePts() {
+        const buffer = this.attributes.position.data;
+
+
+        let r = 0.5;
+        // let theta = this.foo(r);
+        // console.log("theta=", theta)
+        let theta = 1.0;
+        let cx = 0, cy = 1-r;
+
+        let m = 100;
+
+        let x1 = cx + Math.sin(theta) * r;
+        let y1 = cy - Math.cos(theta) * r;
+        
+        let hsegm = new HSegment([0,0.9999], [x1,y1]);
+
+        for(let i=0; i<m; i++) {
+            let p = hsegm.getPoint(i/m);
+            buffer.push(...p);
+        }
+        for(let i=0; i<m; i++) {       
+            let phi = theta * (1.0 - i/m);            
+            let x = cx + r * Math.sin(phi);
+            let y = cy - r * Math.cos(phi);
+            buffer.push(x,y);            
+        }
+        let k = buffer.length;
+        while(k>=2) {
+            buffer.push(-buffer[k-2], buffer[k-1]);
+            k-=2;
+        }
+    }
+
+    foo(t) {
+        let cx = 0, cy = t * 0.5, r = t * 0.5;
+        let x0 = 0, y0 = cy - r;
+        let dist0 = 0.0;
+        let theta0 = 0;
+        let targetDist = 1; //Math.PI;
+        let count = 0;
+        while(count++<5000) {
+            let theta1 = theta0 + 0.1;
+            let x1 = cx + r*Math.sin(theta1);
+            let y1 = cy - r*Math.cos(theta1);
+            let x = (x0+x1)/2, y = (y0+y1)/2;
+            let uff = Math.pow(1-x*x-y*y,2);
+            if(uff <= 0.0) break;
+            let dx = x1-x0, dy = y1-y0;
+            let d = Math.sqrt((dx*dx+dy*dy)/uff);
+            console.log(x,y,uff,d);
+            let dist1 = dist0 + d;
+            if(dist1 > targetDist) {
+                return theta0 + (theta1-theta0)*(targetDist-dist0)/d;
+            }
+            dist0 = dist1;
+            theta0 = theta1;
+            x0 = x1;
+            y0 = y1;
+        }
+        console.log(theta0, dist0);
     }
 
     _addSegment(p0, p1) {

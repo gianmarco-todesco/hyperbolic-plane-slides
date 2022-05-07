@@ -65,7 +65,7 @@ class FreeHandDrawingScene {
         disk.material.uniforms.texture = twgl.createTexture(gl, {src: textureCanvas});
 
         let dots = this.draggableDots = [];
-        [[0,0],[0.5,0.2],[0.6,0.1],[0.6,0.3]].forEach(([x,y]) => {
+        [[0,-0.2],[0.0,0.2],[0.0,0.0],[0.6,0.1]].forEach(([x,y]) => {
             let dot = new DraggableDot(viewer, x,y);
             this.draggableDots.push(dot);
         })
@@ -74,7 +74,9 @@ class FreeHandDrawingScene {
         this.dot2 = dots[1];
         this.dot3 = dots[2];
         this.dot4 = dots[3];
+        this.dot3.children.push(this.dot4);
         
+        this.dot4.fillColor = [0,0,1,1];
         this.hLine1 = new HLineMesh(gl, 50);
         this.hLine2 = new HLineMesh(gl, 50);
         
@@ -269,19 +271,37 @@ class OctagonsScene {
 
 
 class TessellationScene {
+    constructor(n1=8, n2=3, shellCount=4) {
+        this.n1 = n1;
+        this.n2 = n2;
+        this.shellCount = shellCount
+    }
     init() {
         const {gl, viewer, disk} = this;
-        let tess = this.tess = new GenericTessellation(8,3);
+        let tess = this.tess = new GenericTessellation(this.n1, this.n2);
         tess.addFirstShell();
-        for(let i=0;i<1;i++) tess.addShell();
-        this.hPolygon = new HRegularPolygonOutlineMesh(gl, 8, tess.R, 60);
+        for(let i=0;i<this.shellCount;i++) tess.addShell();
+        this.hPolygon = new HRegularPolygonOutlineMesh(gl, tess.n1, tess.R, 60);
+        this.hPolygonFill = new HRegularPolygonMesh(gl, tess.n1, tess.R, 60);
         this.hMatrix = m4.identity();
-        
-
     }
 
     render() {
         this.hPolygon.material.uniforms.hViewMatrix = this.hMatrix;
+
+        // fill polygons
+        this.tess.cells.forEach(cell => {
+            let mat = m4.multiply(this.hMatrix, cell.mat);
+            let d = getLength(pTransform(mat, [0,0]));
+            let v = 1.0 - d*0.2
+            this.hPolygonFill.material.uniforms.color = [v*0.8,v*0.9,v,1];
+            this.hPolygonFill.material.uniforms.hModelMatrix = cell.mat;
+            this.hPolygonFill.draw();
+        })
+
+        // draw outlines
+        this.hPolygon.material.uniforms.color = [0,0,0,1];
+
         this.tess.cells.forEach(cell => {
             this.hPolygon.material.uniforms.hModelMatrix = cell.mat;
             this.hPolygon.draw();
@@ -294,6 +314,7 @@ class TessellationScene {
         this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
     }
 
+    /*
     uffi() {
         let startTime = performance.now();
         let bestMatrix = null;
@@ -312,8 +333,12 @@ class TessellationScene {
         console.log("time = ", performance.now() - startTime);
         this.hMatrix = normalizeHMatrix(bestMatrix);
     }
+    */
 }
 
+class Tessellation83Scene extends TessellationScene { constructor() { super(8,3,4);} }
+class Tessellation64Scene extends TessellationScene { constructor() { super(6,4,3);} }
+class Tessellation55Scene extends TessellationScene { constructor() { super(6,6,2);} }
 
 //-----------------------------------------------------------------------------
 
@@ -442,6 +467,7 @@ class Scene7 {
         let ctx = textureCanvas.getContext('2d');
         ctx.fillStyle='transparent';
         ctx.fillRect(0,0,sz,sz);
+
         const cx = sz/2, cy = sz/2, r = sz/2;    
         function cv(p) { return [cx + r * p[0], cy + r * p[1]]; }    
         let vv = [];
@@ -460,10 +486,10 @@ class Scene7 {
             }
         }
         ctx.closePath();
-        ctx.fillStyle = '#0000FF';
+        ctx.fillStyle = '#000088';
         ctx.fill();
         ctx.lineWidth = 5;
-        ctx.strokeStyle = '#000088';
+        ctx.strokeStyle = '#000000';
         ctx.stroke();
 
 
@@ -473,15 +499,17 @@ class Scene7 {
             let p = cv(vv[i*2]);
             ctx.moveTo(p[0],p[1]);
             for(let j = 1; j<=m; j++) {
-                p = cv(hSegment.getPoint(j/m, 0.02));
+                let t = (j<5) ? j/4 : j>m-5 ? (m-j)/4 : 1;
+                p = cv(hSegment.getPoint(j/m, 0.02*t));
                 ctx.lineTo(p[0],p[1]);
             }
             for(let j = 1; j<m; j++) {
-                p = cv(hSegment.getPoint(1-j/m, -0.02));
+                let t = (j<5) ? j/4 : j>m-5 ? (m-j)/4 : 1;
+                p = cv(hSegment.getPoint(1-j/m, -0.02*t));
                 ctx.lineTo(p[0],p[1]);
             }
             ctx.closePath();
-            ctx.fillStyle = i%2 == 0 ? '#FF0000' : '#00FF00';
+            ctx.fillStyle = i%2 == 0 ? '#FF0088' : '#00FF88';
             ctx.fill();
 
         }
@@ -532,7 +560,9 @@ class CircleLimitIIIScene {
             [0.17,0.32,0.35,1]        
         ].map(v => v.map(x => x*2.0));
         this.scramble = [0,1,2,3];
-    
+   
+        this.running = false;
+        this.runningMatrix = m4.identity();
     }
 
     onKeyDown(e) {
@@ -553,12 +583,31 @@ class CircleLimitIIIScene {
         else if(e.key == 'e') this.showOctagons = !this.showOctagons;
 
 
-        else if(e.key == 'm') {
+        else if(e.key == 't') {
+            if(this.running) this.running = false;
+            else {
+                this.running = true;
+                this.runningMatrix = hTranslation(0.007,0);
+            }
+        }
+        else if(e.key == 'r') {
+            if(this.running) this.running = false;
+            else {
+                this.running = true;
+                let cx = 0.5, cy = 0.5;
+                this.runningMatrix = [hTranslation(cx,cy), m4.rotationZ(0.005), hTranslation(-cx,-cy)]
+                    .reduce((a,b)=>m4.multiply(a,b));
+            }
         }
         
     }
     render() {
         const {gl, viewer, disk} = this;
+
+        if(this.running) {
+            this.hMatrix = m4.multiply(this.runningMatrix, this.hMatrix);
+            this.tess.adjustMatrix2(this.hMatrix, this.scramble);
+        }
 
         viewer.entities.disk.material.setColor([0.3,0.3,0.3,1]);
         viewer.entities.disk.draw();
@@ -615,13 +664,15 @@ class GearTessellation {
         for(let i=0;i<3;i++) tess.addShell();
         this.hPolygon = new HGearMesh(gl, 8, tess.R); // new HRegularPolygonOutlineMesh(gl, 8, tess.R, 60);
         this.hMatrix = m4.identity();
-        
+        this.hPolygonBorder = new HRegularPolygonOutlineMesh(gl, tess.n1, tess.R, 60);
+        this.showEdges = false;
 
     }
 
     render() {
         let t = performance.now()*0.001*0.3;
         this.hPolygon.material.uniforms.hViewMatrix = this.hMatrix;
+        this.hPolygon.material.uniforms.color = [0.2,0.2,0.8,1];
         this.tess.cells.forEach(cell => {
             let sgn = -1+2*(cell.parity&1);
             this.hPolygon.material.uniforms.hModelMatrix = 
@@ -629,6 +680,71 @@ class GearTessellation {
             this.hPolygon.draw();
         })
         this.hPolygon.material.uniforms.hModelMatrix = m4.identity();
+        if(this.showEdges) {
+            this.hPolygon.material.uniforms.color = [1,0,1,1];
+            this.tess.cells.forEach(cell => {
+                this.hPolygon.material.uniforms.hModelMatrix = cell.mat;
+                this.hPolygonBorder.draw();                
+            })
+    
+        }
+        
+
+        this.hPolygon.material.uniforms.hViewMatrix = m4.identity();
+    }
+
+    onPointerDrag(e) {
+        this.hMatrix = normalizeHMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
+
+        // this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
+    }
+    onKeyDown(e) {
+        if(e.key == 'e') this.showEdges = !this.showEdges;
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+class PseudoSphereScene {
+    init() {
+        const {gl, viewer, disk} = this;
+        let tess = this.tess = new GenericTessellation(8,3);
+        tess.addFirstShell();
+        for(let i=0;i<3;i++) tess.addShell();
+
+        this.hPolygon = new HRegularPolygonOutlineMesh(gl, tess.n1, tess.R, 60);
+        this.hPolygonFill = new HRegularPolygonMesh(gl, tess.n1, tess.R, 60);
+        this.pseudoSphere = new HPseudoSphereMesh(gl);
+
+        this.hMatrix = m4.identity();
+        
+    }
+
+    render() {
+        this.hPolygon.material.uniforms.hViewMatrix = this.hMatrix;
+
+        // fill polygons
+        this.tess.cells.forEach(cell => {
+            let mat = m4.multiply(this.hMatrix, cell.mat);
+            let d = getLength(pTransform(mat, [0,0]));
+            let v = 1.0 - d*0.2
+            this.hPolygonFill.material.uniforms.color = [v*0.8,v*0.9,v,1];
+            this.hPolygonFill.material.uniforms.hModelMatrix = cell.mat;
+            this.hPolygonFill.draw();
+        })
+
+        // draw outlines
+        this.hPolygon.material.uniforms.color = [0,0,0,1];
+
+        this.tess.cells.forEach(cell => {
+            this.hPolygon.material.uniforms.hModelMatrix = cell.mat;
+            this.hPolygon.draw();
+        })
+        this.hPolygon.material.uniforms.hModelMatrix = m4.identity();
+
+        this.pseudoSphere.material.uniforms.color = [1,0,0,1];
+        this.pseudoSphere.draw();
         this.hPolygon.material.uniforms.hViewMatrix = m4.identity();
     }
 
