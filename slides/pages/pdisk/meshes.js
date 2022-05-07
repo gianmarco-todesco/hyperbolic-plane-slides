@@ -276,7 +276,7 @@ class HRegularPolygon {
 
 class HGearMesh extends Mesh {
     constructor(gl, vCount, radius, m = 10) {
-        super(gl, gl.LINE_STRIP, getSimpleHyperbolicMaterial(gl));
+        super(gl, gl.LINES, getSimpleHyperbolicMaterial(gl));
         this.vCount = vCount;
         this.radius = radius;
         this.m = m;
@@ -286,16 +286,46 @@ class HGearMesh extends Mesh {
     }  
 
     _computePts() {
-        const m = this.m;
+        let m = this.m;
         const buffer = this.attributes.position.data;
+        
+        let r = this.radius * 0.78;
+        let r0 = r - this.radius * 0.05;
+        let r1 = r + this.radius * 0.05;
+
+        let r2 = this.radius * 0.7;
+        let r3 = this.radius * 0.69;
+        let r4 = this.radius * 0.12;
+        let r5 = this.radius * 0.1;
+
+        m = 30;
+        for(let i=0; i<m; i++) {
+            let phis = [0,1,2,3,4].map(j=>2*Math.PI*(i+j/4-0.63)/m);
+            let cssn = phis.map(phi=>[Math.cos(phi), Math.sin(phi)]);
+            let pts = [r0,r1,r1,r0,r0].map((r,j)=>
+                [r*cssn[j][0], r*cssn[j][1]]);
+            // buffer.push(...pts[0], ...pts[1])
+            for(let j=0; j<4; j++) 
+                buffer.push(...pts[j], ...pts[j+1]);    
+            [0.1,0.15,0.65,0.7].forEach(rr=> {
+                let r = this.radius * rr;
+                for(let j=0; j<4; j++) {
+                    buffer.push(cssn[j][0]*r,cssn[j][1]*r,cssn[j+1][0]*r,cssn[j+1][1]*r);
+                }
+            });
+                    
+        }
+
+        /*
         let pts = [];
         for(let side=0; side<this.vCount; side++) {
             let phi = 2*Math.PI*side/this.vCount;
             pts.push([this.radius*Math.cos(phi),this.radius*Math.sin(phi)]);
         }
+
         for(let side=0; side<this.vCount; side++) {
             this._addSegment(pts[side], pts[(side+1)%this.vCount]);
-            this._addSegment([0,0], pts[(side+1)%this.vCount]);
+            // this._addSegment([0,0], pts[(side+1)%this.vCount]);
             /*
             let hSegment = new HSegment(pts[side], pts[(side+1)%this.vCount]);
             for(let i=0; i<m; i++) {
@@ -303,8 +333,10 @@ class HGearMesh extends Mesh {
                 let k = side*m+i;
                 buffer.push(p[0], p[1]);
             }
-            */
+            * /
         }
+        */
+
     }
 
     _addSegment(p0, p1) {

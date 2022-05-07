@@ -26,7 +26,7 @@ class GenericTessellation {
             }
             this.baseMatrices.push(mats);
         }
-        this.cells = [{ mat: m4.identity()}];
+        this.cells = [{ mat: m4.identity(), parity:0}];
         this.boundary = [];
 
         /*
@@ -45,7 +45,7 @@ class GenericTessellation {
         for(let i=0;i<this.n1;i++) {
             for(let j=0;j<this.n2-2; j++) {
                 let mat = this.baseMatrices[i][j];
-                this.cells.push({mat})
+                this.cells.push({mat, parity:1+j})
             }
         }
 
@@ -82,9 +82,10 @@ class GenericTessellation {
             let j0 = b.type == 1 ? 2 : 1;
             let j1 = this.n2 - 1;
             // if(b.type == 2) j1++;
+        
             for(let j = j0; j < j1; j++) {
                 let matB = m4.multiply(b.cell.mat, this.baseMatrices[b.j][j]);
-                let newCell = { mat:matB };
+                let newCell = { mat:matB, parity:b.cell.parity+j+1 };
                 this.cells.push(newCell);
 
                 // let t0 = oldBoundary[(i+m-1)%m].type == 1 ? 3 : 2;

@@ -27,9 +27,14 @@
 
 .reveal h1,
 .reveal h2,
-.reveal h3
+.reveal h3,
+.reveal h4
  { font-family: Lato, sans-serif;}
 
+ .reveal h3,.reveal h4 { margin:0; } 
+
+ .r-stack img { height:100%; }
+.images-row img { margin-left : 20px; margin-right: 20px; border:solid 1px black; box-shadow: 5px 5px 5px gray;}
         </style>
 	</head>
 	<body>
@@ -42,22 +47,53 @@
                 </section>
 				<section>
                     <h3>Maurits Cornelis Escher</h3>
+                    <h4>(1898 - 1972)</h4>
                     <div class="r-stack stretch">
-                        <img class="fragment fade-out" data-fragment-index="0" style="height:90%" src="images/escher.png">
-                        <img class="fragment" data-fragment-index="0" style="height:90%" src="images/horses.png">
+                        <img class="fragment fade-out strike" data-fragment-index="0" src="images/escher2.jpg">
+                        <img class="fragment fade-in" data-fragment-index="0" src="images/escher-mirror.jpg">
                     </div>
                 </section>
 
-				<section>
-                    <h3>in Italia</h3>
-                    <div class="r-stack stretch">
-                        <img class="fragment fade-out" data-fragment-index="0" style="height:90%" src="images/tropea.jpg">
-                        <img class="fragment" data-fragment-index="0" style="height:90%" src="images/pollino.jpg">
-                    </div>
+                <section>
+                    <video data-autoplay class="stretch" src="video/esher-engraving-snakes.mov"></video>
+                    <p>Escher al lavoro</p>
                 </section>
                 <section>
+                    <h4>Snakes (1969 - xilografia)</h4>
                     <img class="stretch" src="images/snakes.jpg">
                 </section>
+				<section>
+                    <h4>In Italia (1923-1935)</h4>
+                    <div class="r-stack stretch">
+                        <img class="fragment fade-out stretch" data-fragment-index="0" src="images/fluorescent-sea.jpg">
+                        <img class="fragment fade-in-then-out stretch" data-fragment-index="0" src="images/tropea.jpg">
+                        <img class="fragment fade-in-then-out stretch"  src="images/pollino.jpg">
+                    </div>
+                </section>
+				<section>
+                    <h4>Figure impossibili</h4>
+                    <div class="r-stack stretch">
+                        <img class="fragment fade-out stretch" data-fragment-index="0"  src="images/fluorescent-sea.jpg">
+                        <img class="fragment fade-in-then-out stretch" data-fragment-index="0"  src="images/tropea.jpg">
+                        <img class="fragment fade-in-then-out stretch" src="images/pollino.jpg">
+                    </div>
+                </section>
+				<section>
+                    <h4>Figure impossibili</h4>
+                    <div class="r-stack stretch">
+                        <img class="fragment fade-out " data-fragment-index="0" height="1000" src="images/ascending-and-descending.jpg">
+                        <img class="fragment fade-in-then-out " data-fragment-index="0" height="1000" src="images/escher-belvedere.jpg">
+                    </div>
+                </section>
+				<section>
+                    <h4>Matematica</h4>
+                    <div class="r-stack stretch">
+                        <img class="fragment fade-out " data-fragment-index="0" height="1000" src="images/escher-reptiles.jpg">
+                        <img class="fragment fade-in-then-out " data-fragment-index="0" height="1000" src="images/escher-print-gallery.jpg">
+                        <img class="fragment fade-in stretch" height="1000" src="images/horses.png">
+                    </div>
+                </section>
+                
                 
 				<section>
                     <h3>Harold Scott MacDonald Coxeter</h3>
@@ -65,23 +101,23 @@
                 </section>
 
 				<section>
-                    <div>
-                        <img src="images/cox_tess.png">
-                        <img src="images/cl1_small.png">
-                        <img src="images/cl3_small.png">                        
+                    <div class="images-row">
+                        <img src="images/fig-7-pag-11.jpg" height="500">
+                        <img class="fragment" data-fragment-index="2" src="images/cl1.jpg" height="500">
+                        <img class="fragment" data-fragment-index="4" src="images/cl3.png" height="500">                        
                     </div>
-                    <div class="r-stack">
-                        <p class="fragment fade-in-then-out">
+                    <div class="r-stack" style="margin:30px;">
+                        <p class="fragment fade-in-then-out" data-fragment-index="1">
                             ''..Though the text of your article on 'Crystal Symmetry and its Generalizations 
                             is much too learned for a simple, self-made pattern man like me, some of the 
                             text-illustrations and especially Figure 7, page 11, gave me quite a shock...''
                         </p>
-                        <p class="fragment fade-in-then-out">
+                        <p class="fragment fade-in-then-out" data-fragment-index="3">
                             ''..Circle Limit I, being a first attempt, displays all sorts of shortcomings ...
                             and leaves much to be desired... . There is no continuity, no "traffic flow" 
                             nor unity of colour in each row... ''
                         </p>
-                        <p class="fragment fade-in">
+                        <p class="fragment fade-in" data-fragment-index="5">
                             '' ..I do this with the strange feeling that this piece of work is a 'milestone' in
                             my development,but that no one but myself will ever realize it...''
                         </p>
@@ -90,8 +126,8 @@
 
                 <section>
                     <table>
-                        <row><td><img src="images/cl1_small.png"></td><img src="images/cl2_small.png"><td></td></row>
-                        <row><td><img src="images/cl3_small.png"></td><img src="images/cl4_small.png"><td></td></row>
+                        <row><td><img src="images/cl1.jpg"></td><img src="images/cl2_small.png"><td></td></row>
+                        <row><td><img src="images/cl3.png"></td><img src="images/cl4_small.png"><td></td></row>
                     </table>
                 </section>
 

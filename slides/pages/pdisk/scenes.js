@@ -610,9 +610,9 @@ class CircleLimitIIIScene {
 class GearTessellation {
     init() {
         const {gl, viewer, disk} = this;
-        let tess = this.tess = new GenericTessellation(8,3);
+        let tess = this.tess = new GenericTessellation(6,4);
         tess.addFirstShell();
-        for(let i=0;i<1;i++) tess.addShell();
+        for(let i=0;i<3;i++) tess.addShell();
         this.hPolygon = new HGearMesh(gl, 8, tess.R); // new HRegularPolygonOutlineMesh(gl, 8, tess.R, 60);
         this.hMatrix = m4.identity();
         
@@ -620,9 +620,12 @@ class GearTessellation {
     }
 
     render() {
+        let t = performance.now()*0.001*0.3;
         this.hPolygon.material.uniforms.hViewMatrix = this.hMatrix;
         this.tess.cells.forEach(cell => {
-            this.hPolygon.material.uniforms.hModelMatrix = cell.mat;
+            let sgn = -1+2*(cell.parity&1);
+            this.hPolygon.material.uniforms.hModelMatrix = 
+                m4.multiply(cell.mat, m4.rotationZ(t*sgn));
             this.hPolygon.draw();
         })
         this.hPolygon.material.uniforms.hModelMatrix = m4.identity();
@@ -630,6 +633,8 @@ class GearTessellation {
     }
 
     onPointerDrag(e) {
-        this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
+        this.hMatrix = normalizeHMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
+
+        // this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
     }
 }
