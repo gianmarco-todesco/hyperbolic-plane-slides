@@ -85,11 +85,17 @@ function populateScene() {
                 net.addNextFace();
                 //netViewer.update(net);
             } 
-            else if(kbInfo.event.key == "1") { net.setType(0); }
-            else if(kbInfo.event.key == "2") { net.setType(1); }
-            else if(kbInfo.event.key == "3") { net.setType(2); }
-            else if(kbInfo.event.key == "4") { net.setType(3); }
-            else if(kbInfo.event.key == "5") { net.setType(4); }
+            else if(kbInfo.event.key == "1") { net.setType(0); netViewer.updateDots(false); }
+            else if(kbInfo.event.key == "2") { net.setType(1); netViewer.updateDots(false); }
+            else if(kbInfo.event.key == "3") { net.setType(2); netViewer.updateDots(false); }
+            else if(kbInfo.event.key == "4") { net.setType(3); netViewer.updateDots(false); }
+            else if(kbInfo.event.key == "5") { net.setType(4); netViewer.updateDots(false); }
+            else if(kbInfo.event.key == "d") {
+                if(netViewer.viewDot) netViewer.updateDots(false);
+                else if(net.type >= 3) {
+                    netViewer.updateDots(true);
+                }
+            }
             break;
           case BABYLON.KeyboardEventTypes.KEYUP:
             // onKeyUp(kbInfo.event); 
@@ -133,24 +139,32 @@ class NetViewer {
         mesh.material.backFaceCulling = false;
         mesh.material.twoSidedLighting = true;
 
-        /*
+        
         let tx = this.texture = new BABYLON.DynamicTexture('dt', {width:1024,height:1024}, scene);
         let ctx = tx.getContext();
         ctx.fillStyle = "white";
         ctx.fillRect(0,0,1024,1024);
-        ctx.fillStyle = "black";
-        ctx.beginPath();
-        ctx.moveTo(0,0);
-        ctx.lineTo(512,0);
-        ctx.lineTo(0,512);
-        ctx.closeSubPath();
-        ctx
         tx.update();
+        this.viewDot = false;
         mesh.material.diffuseTexture = this.texture;
+    }
 
-        */
-    
-
+    updateDots(on) {
+        this.viewDot = on;
+        let tx = this.texture;
+        let ctx = tx.getContext();
+        ctx.fillStyle = "white";
+        ctx.fillRect(0,0,1024,1024);
+        if(on) {
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.moveTo(0,1023);
+            ctx.lineTo(512,1023);
+            ctx.lineTo(0,512);
+            ctx.closePath();
+            ctx.fill();
+        }
+        tx.update();
     }
 
     update(net) {        
@@ -193,7 +207,10 @@ class NetViewer {
         let positions = this.vd.positions;
         let normals = this.vd.normals;
         net.faces.forEach((f,i) => {
-            let pts = f.vertices.map(v=>v.pos);
+            let ii = [0,1,2];
+            if(f.vertices[1].valence != 6) ii = [1,0,2];
+            else if(f.vertices[2].valence != 6) ii = [2,0,1];
+            let pts = ii.map(i=>f.vertices[i].pos);
             let k = 3*3*i;
             pts.forEach((pt,j) => {
                 positions[k+j*3+0] = pt.x;

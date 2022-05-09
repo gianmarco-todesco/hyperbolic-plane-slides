@@ -296,10 +296,12 @@ class HGearMesh extends Mesh {
         let r0 = r - this.radius * 0.05;
         let r1 = r + this.radius * 0.05;
 
+        /*
         let r2 = this.radius * 0.7;
         let r3 = this.radius * 0.69;
-        let r4 = this.radius * 0.12;
-        let r5 = this.radius * 0.1;
+        let r4 = this.radius * 0.06;
+        let r5 = this.radius * 0.05;
+        */
 
         m = 30;
         for(let i=0; i<m; i++) {
@@ -310,7 +312,7 @@ class HGearMesh extends Mesh {
             // buffer.push(...pts[0], ...pts[1])
             for(let j=0; j<4; j++) 
                 buffer.push(...pts[j], ...pts[j+1]);    
-            [0.1,0.15,0.65,0.7].forEach(rr=> {
+            [0.03,0.07,0.68,0.70].forEach(rr=> {
                 let r = this.radius * rr;
                 for(let j=0; j<4; j++) {
                     buffer.push(cssn[j][0]*r,cssn[j][1]*r,cssn[j+1][0]*r,cssn[j+1][1]*r);

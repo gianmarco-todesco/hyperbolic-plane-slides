@@ -672,7 +672,7 @@ class GearTessellation {
     render() {
         let t = performance.now()*0.001*0.3;
         this.hPolygon.material.uniforms.hViewMatrix = this.hMatrix;
-        this.hPolygon.material.uniforms.color = [0.2,0.2,0.8,1];
+        this.hPolygon.material.uniforms.color = [0.2,0.2,0.3,1];
         this.tess.cells.forEach(cell => {
             let sgn = -1+2*(cell.parity&1);
             this.hPolygon.material.uniforms.hModelMatrix = 
@@ -711,13 +711,14 @@ class PseudoSphereScene {
         const {gl, viewer, disk} = this;
         let tess = this.tess = new GenericTessellation(8,3);
         tess.addFirstShell();
-        for(let i=0;i<3;i++) tess.addShell();
+        for(let i=0;i<4;i++) tess.addShell();
 
         this.hPolygon = new HRegularPolygonOutlineMesh(gl, tess.n1, tess.R, 60);
         this.hPolygonFill = new HRegularPolygonMesh(gl, tess.n1, tess.R, 60);
         this.pseudoSphere = new HPseudoSphereMesh(gl);
 
         this.hMatrix = m4.identity();
+        this.hMatrixBis = m4.identity();
         
     }
 
@@ -735,6 +736,7 @@ class PseudoSphereScene {
         })
 
         // draw outlines
+        // this.hPolygon.material.uniforms.hViewMatrix = this.hMatrix;
         this.hPolygon.material.uniforms.color = [0,0,0,1];
 
         this.tess.cells.forEach(cell => {
@@ -743,14 +745,14 @@ class PseudoSphereScene {
         })
         this.hPolygon.material.uniforms.hModelMatrix = m4.identity();
 
+        this.hPolygon.material.uniforms.hViewMatrix = this.hMatrixBis;
         this.pseudoSphere.material.uniforms.color = [1,0,0,1];
         this.pseudoSphere.draw();
         this.hPolygon.material.uniforms.hViewMatrix = m4.identity();
     }
 
     onPointerDrag(e) {
-        this.hMatrix = normalizeHMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
-
-        // this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
+        this.hMatrixBis = normalizeHMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrixBis));
+        this.hMatrix = this.tess.adjustMatrix(m4.multiply(hTranslation(e.dx, e.dy), this.hMatrix));
     }
 }
