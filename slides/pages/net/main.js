@@ -157,6 +157,10 @@ class NetViewer {
             ctx.lineTo(0,512);
             ctx.closePath();
             ctx.fill();
+            const d = 16;
+            ctx.fillRect(0,1024-d,1024,d);
+            ctx.fillRect(0,0,d,1024);
+            
         }
         tx.update();
     }
@@ -177,27 +181,42 @@ class NetViewer {
             inst.isVisible = true;
         });
         */
+        this.recenter(net);
         
 
         // edges
-        let eis = this.edgesInstances;
-        net.edges.forEach((e,i) => {
-            let inst;
-            if(i<eis.length) inst = eis[i];
-            else { inst = me.cylinderMesh.createInstance('s'+i); eis.push(inst); }
-            let p1 = e.va.pos, p2 = e.vb.pos;
-            let delta = p2.subtract(p1);
-            inst.position.set(0,0,0);
-            inst.lookAt(delta);
-            inst.rotate(BABYLON.Axis.X, Math.PI/2);
-            inst.scaling.set(1,delta.length(),1);
-            BABYLON.Vector3.LerpToRef(p1,p2,0.5,inst.position); 
-            inst.isVisible = true;
-        })
-        for(let i = net.edges.length; i<eis.length; i++) {
-            eis[i].isVisible = false;
+        const eis = this.edgesInstances;
+        if(this.viewDot) {
+            for(let i = 0; i<eis.length; i++) {
+                eis[i].isVisible = false;
+            }
+            net.vertices.forEach(v => v.sphere.isVisible = false);
+        } else {
+            
+            net.edges.forEach((e,i) => {
+                let inst;
+                if(i<eis.length) inst = eis[i];
+                else { inst = me.cylinderMesh.createInstance('s'+i); eis.push(inst); }
+                let p1 = e.va.pos, p2 = e.vb.pos;
+                let delta = p2.subtract(p1);
+                inst.position.set(0,0,0);
+                inst.lookAt(delta);
+                inst.rotate(BABYLON.Axis.X, Math.PI/2);
+                inst.scaling.set(1,delta.length(),1);
+                BABYLON.Vector3.LerpToRef(p1,p2,0.5,inst.position); 
+                inst.isVisible = true;
+            })
+            for(let i = net.edges.length; i<eis.length; i++) {
+                eis[i].isVisible = false;
+            }
+            net.vertices.forEach(v => v.sphere.isVisible = true);
+    
         }
 
+        this.updateFaces(net);
+    }
+
+    updateFaces(net) {
         // faces
         let positions = this.vd.positions;
         let normals = this.vd.normals;
@@ -230,7 +249,16 @@ class NetViewer {
         this.trianglesMesh.updateVerticesData(
             BABYLON.VertexBuffer.NormalKind, 
             normals);
+    }
 
+    recenter(net) {
+        let c = new BABYLON.Vector3(0,0,0);
+        net.vertices.forEach(v => c.addInPlace(v.pos));
+        c.scaleInPlace(1/net.vertices.length);
+        let delta = c.scale(-0.01);
+        //this.trianglesMesh.position.addInPlace(delta);
+        //this.edgesInstances.forEach(inst => inst.position.addInPlace(delta));
+        net.vertices.forEach(v => v.sphere.position.addInPlace(delta));
     }
 }
 
@@ -382,6 +410,7 @@ class Net {
 
     
     addNextFace() {
+        if(this.boundary.length<3) return;
         let boundary = this.boundary;
         let vb = boundary[0];
         if(vb.valence == vb.count) {
