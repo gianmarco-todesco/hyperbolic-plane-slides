@@ -17,6 +17,7 @@ function setup() {
 
     let scenes = [
 
+        new CircleLimitIIIScene(),
         // new Scene7(),
 
         new PointsAndLinesScene(),

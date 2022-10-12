@@ -550,8 +550,13 @@ class CircleLimitIIIScene {
         this.hPolygon.material.uniforms.textureScale = 0.512;
         this.hPolygon.material.uniforms.textureOffset = [0.4959727582292849, 0.49816231555051077]
 
+        //this.hPolygonOutline = new HRegularPolygonThickOutlineMesh(gl, 8, tess.R, 0.015, 10);
+        this.hPolygonOutline = new HRegularPolygonThickOutlineMesh(gl, 8, tess.R, 0.005, 10);
 
-        this.hPolygonOutline = new HRegularPolygonThickOutlineMesh(gl, 8, tess.R, 0.015, 10);
+        this.uffPolygon = new HRegularPolygonMesh(gl, 8, tess.R * 1.3, 60);
+        this.uffPolygon.material = new SimpleTexturedMaterial(gl);
+        this.uffPolygon.material.uniforms.texture = twgl.createTexture(gl, {src:'./images/texture4.png', mag: gl.LINEAR, min: gl.LINEAR });
+        
 
         this.palette = [
             [0.53,0.52,0.28,1],
@@ -628,6 +633,8 @@ class CircleLimitIIIScene {
         m4.identity(uniforms.hMatrix);
         m4.identity(uniforms.hInvMatrix);
 
+        //this.uffPolygon.draw();
+        
         if(this.showOctagons) {
             this.hPolygonOutline.material.uniforms.color = [0.2,0.02,0.2,1.0]
             this.tess.cells.forEach(cell => {
@@ -637,6 +644,7 @@ class CircleLimitIIIScene {
             this.hPolygonOutline.material.uniforms.hModelMatrix = m4.identity();
     
         }
+
     }
 
 

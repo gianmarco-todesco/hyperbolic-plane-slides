@@ -78,6 +78,50 @@ class SimpleMaterial extends Material {
 };
 
 
+// -----------------------------
+// SimpleTexturedMaterial
+// -----------------------------
+class SimpleTexturedMaterial extends Material {
+    constructor(gl) {
+        super(gl, {
+            vs : `
+            precision mediump float;
+            attribute vec2 position;
+            uniform mat4 viewMatrix, modelMatrix;
+            varying vec2 v_pos;
+            void main(void) { 
+                v_pos = position;
+                gl_Position = viewMatrix * modelMatrix * vec4(position, 0.0, 1.0); 
+            }
+            `,
+            fs:`
+            precision mediump float;            
+            uniform vec4 color;       
+            uniform sampler2D texture;
+            varying vec2 v_pos;
+            void main() {
+                gl_FragColor = texture2D(texture, vec2(0.5, 0.5) + v_pos * 0.5); 
+                
+            } 
+            `,
+            uniforms: {
+                color: [0.0,0.0,0.0,1.0],
+                viewMatrix: viewMatrix,
+                modelMatrix: modelMatrix,
+                texture:null,
+            }
+        });
+    }
+    setColor(rgba) {
+        for(let i=0;i<4;i++) this.uniforms.color[i] = rgba[i];        
+    }
+    setModelMatrix(matrix) {
+        this.modelMatrix = matrix;
+    }
+};
+
+
+
 
 class SimpleHyperbolicMaterial extends Material {
     constructor(gl) {
