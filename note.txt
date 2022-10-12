@@ -91,3 +91,24 @@ in net mostra il pallone da calcio.
 servirebbe distinguere il colore dei vertici
 
 aggiungere un calcio in direzione centripeta
+
+
+
+Conferenza:
+
+Comunicare la matematica
+la matematica è un linguaggio (universale), che può essere usato per parlare della realtà o anche di mondi più astratti
+comunicare un linguaggio è un po' paradossale, ricorsivo. In effetti la matematica
+tende anche a riflettere su se stessa, un po' come la filosofia, la letteratura, ecc.
+Ha una sua struttura. E' un insieme di concetti che formano questo linguaggio.
+Hanno grammatica, sintassi, vocabolario, ecc. 
+A scuola spesso si tende a insegnare la grammatica e fare poca conversazione.
+
+Nelle attività umane si sviluppano in maniera naturale concetti matematici che spesso non vengono ritenuti 
+tali. A quel punto comunicare la matematica può diventare un gioco di specchi in cui si fanno
+risuonare questi concetti fra varie arti 
+
+Nella prima parte parlo di Escher e svelo uno dei trucchi: che matematica c'è dietro (o dentro) limite delcerchio
+
+Nella seconda parte vediamo un po' meglio di cosa parla questa matematica: il piano iperbolico 
+ha qualche legame con il nostro mondo?

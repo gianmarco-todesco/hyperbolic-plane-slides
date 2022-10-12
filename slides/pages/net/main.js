@@ -75,6 +75,7 @@ function populateScene() {
             v.pos.copyFrom(v.sphere.position);
         });
         netViewer.update(net);
+        netViewer.tick(engine.getDeltaTime());
     });
 
     scene.onKeyboardObservable.add((kbInfo) => {
@@ -84,16 +85,14 @@ function populateScene() {
                 net.addNextFace();
                 //netViewer.update(net);
             } 
-            else if(kbInfo.event.key == "1") { net.setType(0); netViewer.updateDots(false); }
-            else if(kbInfo.event.key == "2") { net.setType(1); netViewer.updateDots(false); }
-            else if(kbInfo.event.key == "3") { net.setType(2); netViewer.updateDots(false); }
-            else if(kbInfo.event.key == "4") { net.setType(3); netViewer.updateDots(false); }
-            else if(kbInfo.event.key == "5") { net.setType(4); netViewer.updateDots(false); }
+            else if(kbInfo.event.key == "1") { net.setType(0); netViewer.clearPattern(); }
+            else if(kbInfo.event.key == "2") { net.setType(1); netViewer.clearPattern(); }
+            else if(kbInfo.event.key == "3") { net.setType(2); netViewer.clearPattern(); }
+            else if(kbInfo.event.key == "4") { net.setType(3); netViewer.clearPattern(); }
+            else if(kbInfo.event.key == "5") { net.setType(4); netViewer.clearPattern(); }
             else if(kbInfo.event.key == "d") {
-                if(netViewer.viewDot) netViewer.updateDots(false);
-                else if(net.type >= 3) {
-                    netViewer.updateDots(true);
-                }
+                if(netViewer.patternVisibility > 0.0) netViewer.patternVisibilityTarget = 0.0;
+                else if(net.type >= 3) netViewer.patternVisibilityTarget = 1.0;
             }
             break;
           case BABYLON.KeyboardEventTypes.KEYUP:
@@ -139,18 +138,36 @@ class NetViewer {
         ctx.fillStyle = "white";
         ctx.fillRect(0,0,1024,1024);
         tx.update();
-        this.viewDot = false;
+        this.patternVisibility = this.patternVisibilityTarget = 0.0;        
         mesh.material.diffuseTexture = this.texture;
     }
 
-    updateDots(on) {
-        this.viewDot = on;
+    tick(dt) {
+        if(this.patternVisibility == this.patternVisibilityTarget) return;
+        else
+        {
+            let t = this.patternVisibility;
+            let delta = dt * 0.001;
+            if(this.patternVisibilityTarget > t) 
+                t = Math.min(this.patternVisibilityTarget, t+delta);
+            else 
+                t = Math.max(this.patternVisibilityTarget, t-delta);
+            this.updatePattern(t);
+        }
+    }
+    clearPattern() {
+        this.patternVisibility = this.patternVisibilityTarget = 0.0;
+        this.updatePattern(0.0);
+    }
+
+    updatePattern(visibility) {
+        this.patternVisibility = visibility;
         let tx = this.texture;
         let ctx = tx.getContext();
         ctx.fillStyle = "white";
         ctx.fillRect(0,0,1024,1024);
-        if(on) {
-            ctx.fillStyle = "black";
+        if(visibility>0.0) {
+            ctx.fillStyle = "rgba(0, 0, 0, " + visibility + ")";
             ctx.beginPath();
             ctx.moveTo(0,1023);
             ctx.lineTo(512,1023);
@@ -159,10 +176,11 @@ class NetViewer {
             ctx.fill();
             const d = 16;
             ctx.fillRect(0,1024-d,1024,d);
-            ctx.fillRect(0,0,d,1024);
-            
+            ctx.fillRect(0,0,d,1024);            
         }
         tx.update();
+        this.cylinderMesh.material.alpha = 1-visibility;
+        
     }
 
 
@@ -186,13 +204,14 @@ class NetViewer {
 
         // edges
         const eis = this.edgesInstances;
-        if(this.viewDot) {
+        if(this.patternVisibility >= 1.0) {
+            // hide edges and vertices
             for(let i = 0; i<eis.length; i++) {
                 eis[i].isVisible = false;
             }
             net.vertices.forEach(v => v.sphere.isVisible = false);
         } else {
-            
+            // show edges
             net.edges.forEach((e,i) => {
                 let inst;
                 if(i<eis.length) inst = eis[i];
@@ -210,7 +229,7 @@ class NetViewer {
                 eis[i].isVisible = false;
             }
             net.vertices.forEach(v => v.sphere.isVisible = true);
-    
+            net.vMaterials.forEach(mat => mat.alpha = 1-this.patternVisibility);
         }
 
         this.updateFaces(net);
