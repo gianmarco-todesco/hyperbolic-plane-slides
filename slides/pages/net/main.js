@@ -71,7 +71,6 @@ function populateScene() {
 
     scene.registerBeforeRender(() => {
         let t = performance.now() * 0.001;
-        net.process();
         net.vertices.forEach(v => {
             v.pos.copyFrom(v.sphere.position);
         });
@@ -106,15 +105,10 @@ function populateScene() {
 
 
 class NetViewer {
+
     constructor() {
-        this.sphereMesh = BABYLON.MeshBuilder.CreateSphere('s',{diameter:0.05}, scene);
-        this.sphereMesh.material = new BABYLON.StandardMaterial('smat', scene);
-        this.sphereMesh.material.diffuseColor.set(0.1,0.1,0.3);
-        this.sphereMesh.isVisible = false;
 
-        this.verticesInstances = [];
-
-        this.cylinderMesh = BABYLON.MeshBuilder.CreateCylinder('c',{diameter:0.01, height:1}, scene);
+        this.cylinderMesh = BABYLON.MeshBuilder.CreateCylinder('c',{diameter:0.03, height:1}, scene);
         this.cylinderMesh.material = new BABYLON.StandardMaterial('cmat', scene);
         this.cylinderMesh.isVisible = false;
         this.cylinderMesh.material.diffuseColor.set(0,1,1);
@@ -163,46 +157,66 @@ class NetViewer {
             ctx.lineTo(0,512);
             ctx.closePath();
             ctx.fill();
+            const d = 16;
+            ctx.fillRect(0,1024-d,1024,d);
+            ctx.fillRect(0,0,d,1024);
+            
         }
         tx.update();
     }
 
+
+
     update(net) {        
         const me = this;
-        let vis = this.verticesInstances;
-
+        
         // vertices
+        /*
+        let vm = this.vertexMeshes;
         net.vertices.forEach((v,i) => {
             let inst;
-            if(i<vis.length) inst = vis[i];
-            else { inst = me.sphereMesh.createInstance('s'+i); vis.push(inst); }
+            if(i<vm[0].instances.length) inst = vm[0].instances[i];
+            else { inst = vm[0].mesh.createInstance('s'+i); vm[0].instances.push(inst); }
             inst.position.copyFrom(v.pos);
             inst.isVisible = true;
-        })
-        for(let i = net.vertices.length; i<vis.length; i++) {
-            vis[i].isVisible = false;
-        }
+        });
+        */
+        this.recenter(net);
         
 
         // edges
-        let eis = this.edgesInstances;
-        net.edges.forEach((e,i) => {
-            let inst;
-            if(i<eis.length) inst = eis[i];
-            else { inst = me.cylinderMesh.createInstance('s'+i); eis.push(inst); }
-            let p1 = e.va.pos, p2 = e.vb.pos;
-            let delta = p2.subtract(p1);
-            inst.position.set(0,0,0);
-            inst.lookAt(delta);
-            inst.rotate(BABYLON.Axis.X, Math.PI/2);
-            inst.scaling.set(1,delta.length(),1);
-            BABYLON.Vector3.LerpToRef(p1,p2,0.5,inst.position); 
-            inst.isVisible = true;
-        })
-        for(let i = net.edges.length; i<eis.length; i++) {
-            eis[i].isVisible = false;
+        const eis = this.edgesInstances;
+        if(this.viewDot) {
+            for(let i = 0; i<eis.length; i++) {
+                eis[i].isVisible = false;
+            }
+            net.vertices.forEach(v => v.sphere.isVisible = false);
+        } else {
+            
+            net.edges.forEach((e,i) => {
+                let inst;
+                if(i<eis.length) inst = eis[i];
+                else { inst = me.cylinderMesh.createInstance('s'+i); eis.push(inst); }
+                let p1 = e.va.pos, p2 = e.vb.pos;
+                let delta = p2.subtract(p1);
+                inst.position.set(0,0,0);
+                inst.lookAt(delta);
+                inst.rotate(BABYLON.Axis.X, Math.PI/2);
+                inst.scaling.set(1,delta.length(),1);
+                BABYLON.Vector3.LerpToRef(p1,p2,0.5,inst.position); 
+                inst.isVisible = true;
+            })
+            for(let i = net.edges.length; i<eis.length; i++) {
+                eis[i].isVisible = false;
+            }
+            net.vertices.forEach(v => v.sphere.isVisible = true);
+    
         }
 
+        this.updateFaces(net);
+    }
+
+    updateFaces(net) {
         // faces
         let positions = this.vd.positions;
         let normals = this.vd.normals;
@@ -235,7 +249,16 @@ class NetViewer {
         this.trianglesMesh.updateVerticesData(
             BABYLON.VertexBuffer.NormalKind, 
             normals);
+    }
 
+    recenter(net) {
+        let c = new BABYLON.Vector3(0,0,0);
+        net.vertices.forEach(v => c.addInPlace(v.pos));
+        c.scaleInPlace(1/net.vertices.length);
+        let delta = c.scale(-0.01);
+        //this.trianglesMesh.position.addInPlace(delta);
+        //this.edgesInstances.forEach(inst => inst.position.addInPlace(delta));
+        net.vertices.forEach(v => v.sphere.position.addInPlace(delta));
     }
 }
 
@@ -275,6 +298,12 @@ class Net {
         this.edges = [];
         this.faces = [];
         this.type = 0;
+        this.vMaterials = [];
+        for(let i=0; i<3; i++) {
+            let mat = new BABYLON.StandardMaterial('a',scene);
+            this.vMaterials.push(mat);
+            mat.diffuseColor.set(...[[0.7,0.7,0.7],[0.1,0.1,0.1],[0.7,0.1,0.7]][i]);
+        }
     }
     
     clear() {
@@ -284,11 +313,14 @@ class Net {
         this.faces = [];        
     }
 
-    addVertex() {
+    addVertex(valence) {
         let i = this.vertices.length;
         let v = new Vertex(i);
+        v.valence = valence;
         this.vertices.push(v);
         v.sphere = BABYLON.MeshBuilder.CreateSphere('a', {diameter:0.1}, scene);
+        let matIndex = valence == 6 ? 0 : valence == 5 ? 1 : 2;
+        v.sphere.material = this.vMaterials[matIndex];
         v.sphere.physicsImpostor = new BABYLON.PhysicsImpostor(v.sphere, 
             BABYLON.PhysicsImpostor.ParticleImpostor, { 
                 mass: i== 0 ? 0.0 : 0.01 
@@ -358,14 +390,12 @@ class Net {
         // type : 0=5, 1=6, 2=7, 3=5/6, 4=7/6
         this.type = type;
         this.clear();
-        let v0 = this.addVertex();
         let n = [5,6,7,5,7][type];
         let n2 = [5,6,7,6,6][type];
-        v0.valence = n;
+        let v0 = this.addVertex(n);
         let vv = [];
         for(let i=0; i<n; i++) {
-            let v = this.addVertex();
-            v.valence = n2;
+            let v = this.addVertex(n2);
             let phi = Math.PI*2*i/n;
             v.pos.x = Math.cos(phi);
             v.pos.z = Math.sin(phi);
@@ -380,6 +410,7 @@ class Net {
 
     
     addNextFace() {
+        if(this.boundary.length<3) return;
         let boundary = this.boundary;
         let vb = boundary[0];
         if(vb.valence == vb.count) {
@@ -387,20 +418,22 @@ class Net {
             boundary.splice(0,1);
         } else {
             let va = boundary[boundary.length-1];
+
+            let valence;
+            if(this.type<3) valence = va.valence;
+            else if(va.valence == vb.valence) valence = this.type == 4 ? 7 : 5;
+            else valence = 6;
+
             let edge = this.getEdge(va,vb);
             let oldFace = edge.faces[0];
             let vd = oldFace.vertices.find(v => v != va && v != vb);
-            let newVertex = this.addVertex();
+            let newVertex = this.addVertex(valence);
             let edgeMidPoint = BABYLON.Vector3.Lerp(va.pos,vb.pos,0.5);
             edgeMidPoint.addToRef(edgeMidPoint.subtract(vd.pos), newVertex.pos);
             newVertex.pos.y += (-1+2*Math.random())*0.01;
             this.addFace(va,newVertex,vb);
             this.boundary.push(newVertex);
-            if(this.type<3) newVertex.valence = va.valence;
-            else if(va.valence == vb.valence) 
-                newVertex.valence = this.type == 4 ? 7 : 5;
-            else 
-                newVertex.valence = 6;
+
             newVertex.sphere.position.copyFrom(newVertex.pos);
         }
     }
@@ -431,54 +464,6 @@ class Net {
         });
         v.pos = oldPos;
         return energy;
-    }
-
-    process() {
-        return;
-
-        
-        this.vertices.forEach(p => {
-            p.pos.x += (Math.random()-0.5)*2*0.01;
-            p.pos.y += (Math.random()-0.5)*2*0.01;
-            p.pos.z += (Math.random()-0.5)*2*0.01;
-            p.force.set(0,0,0);
-        });
-
-        const eps = 0.01;
-        let dx = new BABYLON.Vector3(eps,0,0);
-        let dy = new BABYLON.Vector3(0,eps,0);
-        let dz = new BABYLON.Vector3(0,0,eps);
-        
-
-        for(let h=0; h<30; h++) {
-
-            this.vertices.forEach(v => {
-
-                let dex = 
-                    this.computeVertexEnergy(v,v.pos.add(dx))-
-                    this.computeVertexEnergy(v,v.pos.subtract(dx));
-                let dey = 
-                    this.computeVertexEnergy(v,v.pos.add(dy))-
-                    this.computeVertexEnergy(v,v.pos.subtract(dy));
-                let dez = 
-                    this.computeVertexEnergy(v,v.pos.add(dz))-
-                    this.computeVertexEnergy(v,v.pos.subtract(dz));
-                let delta = (new BABYLON.Vector3(dex,dey,dez)).normalize();
-
-                v.pos.subtractInPlace(delta.scale(0.0001));
-                
-            });
-            this.vertices.forEach(v => {
-                // v.pos.copyFrom(v.newPos);
-            });
-        }
-
-        let totalEnergy = 0.0;
-        this.edges.forEach(e=>{
-            totalEnergy += this.computeEdgeEnergy(e);
-        })
-        console.log(totalEnergy);
-
     }
 }
 
